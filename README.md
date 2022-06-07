@@ -1,2 +1,1 @@
-# STL-For-C
-Standard Template Library for C Language
+# Standard Template Library for C Language
