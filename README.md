@@ -26,8 +26,50 @@ A free library of generic data types for C programming language.
 
 ## How to use this library?
 
-WIP.
+There are 2 approaches you can choose to use which boils down to whether you want documentation or not.
 
+### **The Doxygen Documentation Approach**
+
+WIP. (Script + Text Template)
+
+### **Direct from Source Approach**
+
+#### **List/Vector**
+
+1. For a demonstration of this, create two files: `list_teststruct.c` and `list_teststruct.h`
+2. In `list_teststruct.h` file, define a test struct as a typedef:
+```c
+#ifndef LIST_TESTSTRUCT_H
+#define LIST_TESTSTRUCT_H 1
+#include <stdint.h>
+
+typedef struct {
+    int32_t A;
+    int64_t B;
+    float C;
+} teststruct;
+```
+3. Then define the macro as followed:
+```c
+#define LIST_TYPE teststruct
+#include "include/list.h"
+```
+4. Then terminates the header guard by adding the following at the bottom:
+```c
+#endif
+```
+
+5. Now open `list_teststruct.c` and add the followings:
+```c
+#include "list_teststruct.h"
+#define LIST_TYPE teststruct
+#include "src/list.c"
+```
+
+6. Ensure `list_teststruct.c` get compiled and linked in to your C project and you can include the header file in your C project as needed: 
+```c
+#include "list_teststruct.h"
+```
 ## Licensing
 
 This library is licensed under MIT license which you can see [here for more information.](LICENSE) and original ideas/codes are from [CoreCLR Runtime project](https://github.com/dotnet/runtime) for generic data types that are transposed for C programming language and those code are licensed under [MIT license](https://github.com/dotnet/runtime/blob/main/LICENSE.TXT) provided by the Dotnet Foundation and it's contributors.
