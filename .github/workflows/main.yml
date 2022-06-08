@@ -25,7 +25,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
-      - uses: BSFishy/meson-build@v1.0.3
+      - name: Install Meson and Ninja-build
+        run: sudo apt-get install -y meson ninja-build
+
       
       - name: Set up Clang
         uses: egor-tensin/setup-clang@v1
