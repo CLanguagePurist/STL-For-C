@@ -44,7 +44,7 @@ jobs:
       - name: Check Logs for Tests
         id: test_verification
         run: |
-          if [[ -n $(grep 'Fail:               0' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep 'Timeout:            0' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep 'Unexpected Pass:    0' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
+          if [[ -n $(grep 'Fail:                  0' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep 'Timeout:               0' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep 'Unexpected Pass:       0' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
           
       - name: Pass or Fail Tests
         run: |
