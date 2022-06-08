@@ -34,11 +34,17 @@ jobs:
         with:
           version: latest
           platform: x64
+          
+      - name: Check
+        run: | 
+          ls -lah
+          pwd
+          
+      - name: Set Current Directory
+        run: cd { { github.ref } }
 
-      # Runs a single command using the runners shell
       - name: Setup build directory
         run: meson setup build
 
-      # Runs a set of commands using the runners shell
       - name: Run a series of tests
         run: meson test -C build
