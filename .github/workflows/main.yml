@@ -39,10 +39,8 @@ jobs:
         run: | 
           ls -lah
           pwd
+          meson --version
           
-      - name: Set Current Directory
-        run: cd { { github.ref } }
-
       - name: Setup build directory
         run: meson setup build
 
