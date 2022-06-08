@@ -19,6 +19,12 @@ A free library of generic data types for C programming language.
 8. Stack
 9. Got an idea? Submit a request in project issues!
 
+### Future Ideas
+1. Circular buffer
+2. Object pooling
+3. Forking off [TinyCThread](https://github.com/tinycthread/tinycthread) for portability
+4. Event Handler (Concurrent via TinyCThread dispatch)
+
 ## Why STL for C?
 1. Usable Datatypes for C Programmers
 2. Templated data types in a sense that this library leverages preprocessor to allow for data type substitution for each container type avoiding a pointer indirection performance cost that most data container in C are written for.
