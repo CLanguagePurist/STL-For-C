@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "include/data/list.h"
+#include "include/list.h"
 
 #define MAKE_LIST_NAME(x) list_ ## x
 #define LIST_NAME(x) MAKE_LIST_NAME(x)
