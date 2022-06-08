@@ -35,14 +35,20 @@ jobs:
           version: latest
           platform: x64
           
-      - name: Check
-        run: | 
-          ls -lah
-          pwd
-          meson --version
-          
       - name: Setup build directory
         run: meson setup build
 
       - name: Run a series of tests
         run: meson test -C build
+        
+      - name: Check Logs for Tests
+        id: test_verification
+        run: |
+          if [[ -n $(grep 'Fail:               0' ./build/meson-logs/testlog.txt) ]] && \
+             [[ -n $(grep 'Timeout:            0' ./build/meson-logs/testlog.txt) ]] && \
+             [[ -n $(grep 'Unexpected Pass:    0' ./build/meson-logs/testlog.txt) ]]; then \
+             echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'" fi
+          
+      - name: Pass or Fail Tests
+        run: |
+          if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
