@@ -51,7 +51,7 @@ jobs:
         if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
-          PARSEDOUTPUT="**Failed Test Case(s)**:%0A$(cat parsed.txt)"
+          PARSEDOUTPUT=$"**Failed Test Case(s)**:\n$(cat parsed.txt)"
           PARSEDOUTPUT="${PARSEDOUTPUT//'%'/'%25'}"
           PARSEDOUTPUT="${PARSEDOUTPUT//$'\n'/'%0A'}"
           PARSEDOUTPUT="${PARSEDOUTPUT//$'\r'/'%0D'}"
