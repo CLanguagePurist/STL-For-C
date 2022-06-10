@@ -154,22 +154,6 @@ int Test_GetRange()
     return 0;
 }
 
-int Test_Reallocation()
-{
-    list_int* list = list_int_new_withcapacity(1024);
-    for (int i = 0; i < 1024; ++i)
-        list_int_add(list, i);
-    if (list->capacity < list->size) return 1;
-        for (int i = 0; i < 2048; ++i)
-        list_int_add(list, i);
-    if (list->capacity < list->size) return 2;
-    for (int i = 0; i < 4096; ++i)
-        list_int_add(list, i);
-    if (list->capacity < list->size) return 3;
-    list_int_destroy(list);
-    return 0;
-}
-
 int Test_AddRange()
 {
     list_int* list = list_int_new();
@@ -306,6 +290,25 @@ int Test_IncorrectData()
     return 0;
 }
 
+int Test_Reallocation()
+{
+    list_int* list = list_int_new();
+    for (int i = 0; i < 1024; ++i)
+    {
+        if (list_int_add(list, i)) return 1;
+    }
+    if (list_int_count(list) != 1024) return 2;
+    if (list->size != 1024) return 3;
+    if (list->capacity < list->size) return 4;
+    
+    if (list_int_removerange(list, 254, 769)) return 5;
+    if (list->size != 255) return 6;
+    if (list->capacity < list->size*2) return 7;
+    if (list->capacity > list->size*3) return 8;
+    list_int_destroy(list);
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc > 0)
@@ -336,10 +339,6 @@ int main(int argc, char* argv[])
             {
                 return Test_GetRange();
             }
-            if (strcmp(argv[i], "test_reallocation") == 0)
-            {
-                return Test_Reallocation();
-            }
             if (strcmp(argv[i], "test_addrange") == 0)
             {
                 return Test_AddRange();
@@ -367,6 +366,10 @@ int main(int argc, char* argv[])
             if (strcmp(argv[i], "test_incorrectdata") == 0)
             {
                 return Test_IncorrectData();
+            }
+            if (strcmp(argv[i], "test_reallocation") == 0)
+            {
+                return Test_Reallocation();
             }
         }
     }

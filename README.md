@@ -76,6 +76,9 @@ typedef struct {
 ```c
 #include "list_teststruct.h"
 ```
+
+#### **Dictionary/HashTable**
+1. 
 ## Licensing
 
 This library is licensed under MIT license which you can see [here for more information.](LICENSE) and original ideas/codes are from [CoreCLR Runtime project](https://github.com/dotnet/runtime) for generic data types that are transposed for C programming language and those code are licensed under [MIT license](https://github.com/dotnet/runtime/blob/main/LICENSE.TXT) provided by the Dotnet Foundation and it's contributors.
