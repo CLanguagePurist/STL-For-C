@@ -1,4 +1,5 @@
 # Standard Template Library for C Language
+[![Chat on Matrix](https://img.shields.io/matrix/stl_for_c:matrix.org)](https://matrix.to/#/#stl_for_c:matrix.org) ![License](https://img.shields.io/github/license/CLanguagePurist/STL-For-C)
 
 A free library of generic data types for C programming language.
 
