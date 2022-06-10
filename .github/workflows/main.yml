@@ -40,27 +40,33 @@ jobs:
 
       - name: Run a series of tests
         run: meson test -C build
+        continue-on-error: true
         
       - name: Check Logs for Tests
         id: test_verification
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
       - name: Parse Test Log for Failed Cases
-        if: steps.test_verification.outputs.status == "FAIL"
+        id: testlog
+        if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
-          echo "::set-output name=testcases::'$(cat parsed.txt)'"
+          PARSEDOUTPUT=$"**Failed Test Case(s)**:
+          $(cat parsed.txt)"
+          PARSEDOUTPUT="${PARSEDOUTPUT//'%'/'%25'}"
+          PARSEDOUTPUT="${PARSEDOUTPUT//$'\n'/'%0A'}"
+          PARSEDOUTPUT="${PARSEDOUTPUT//$'\r'/'%0D'}"
+          echo "::set-output name=testcases::$PARSEDOUTPUT"
       - name: Add comment on which test fails if any
-        if: steps.test_verification.outputs.status == "FAIL"
-        uses: actions/checkout@v2
+        if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
+        uses: jungwinter/comment@v1
+        id: create
         with:
-            title: Failed Test Cases
-            assignee: ${{ github.actor }}
-            label: automatic,feature
-            template: .github/PULL_REQUEST_TEMPLATE/FEATURE.md
-            old_string: FailedTestCases
-            new_string: ${{ steps.test_verification.outputs.testcases }}
-            get_diff: true
+          type: create
+          body: '${{ steps.testlog.outputs.testcases }}'
+          issue_number: ${{ github.event.pull_request.number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Pass or Fail Tests
         run: |
           if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
