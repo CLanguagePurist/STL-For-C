@@ -58,7 +58,7 @@ jobs:
             assignee: ${{ github.actor }}
             label: automatic,feature
             template: .github/PULL_REQUEST_TEMPLATE/FEATURE.md
-            old_string: **FailedTestCases**
+            old_string: FailedTestCases
             new_string: ${{ steps.test_verification.outputs.testcases }}
             get_diff: true
       - name: Pass or Fail Tests
