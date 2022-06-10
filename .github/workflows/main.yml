@@ -47,8 +47,8 @@ jobs:
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
       - name: Parse Test Log for Failed Cases
+        if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         id: testlog
-        if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$"**Failed Test Case(s)**:
@@ -58,7 +58,7 @@ jobs:
           PARSEDOUTPUT="${PARSEDOUTPUT//$'\r'/'%0D'}"
           echo "::set-output name=testcases::$PARSEDOUTPUT"
       - name: Add comment on which test fails if any
-        if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
+        if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         uses: jungwinter/comment@v1
         id: create
         with:
