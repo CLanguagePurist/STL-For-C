@@ -54,16 +54,14 @@ jobs:
           echo "::set-output name=testcases::'$(cat parsed.txt)'"
       - name: Add comment on which test fails if any
         if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
-        uses: devops-infra/action-pull-request@v0.4.2
+        uses: jungwinter/comment@v1
+        id: create
         with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            title: Failed Test Cases
-            assignee: ${{ github.actor }}
-            label: automatic,feature
-            template: .github/PULL_REQUEST_TEMPLATE/FEATURE.md
-            old_string: FailedTestCases
-            new_string: ${{ steps.testlog.outputs.testcases }}
-            get_diff: true
+          type: create
+          body: '${{ steps.testlog.outputs.testcases }}'
+          issue_number: ${{ github.event.pull_request.number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Pass or Fail Tests
         run: |
           if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
