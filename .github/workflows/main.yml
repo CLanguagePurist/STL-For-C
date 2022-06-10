@@ -54,8 +54,9 @@ jobs:
           echo "::set-output name=testcases::'$(cat parsed.txt)'"
       - name: Add comment on which test fails if any
         if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
-        uses: actions/checkout@v2
+        uses: devops-infra/action-pull-request@v0.4.2
         with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
             title: Failed Test Cases
             assignee: ${{ github.actor }}
             label: automatic,feature
