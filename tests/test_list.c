@@ -311,6 +311,7 @@ int Test_Reallocation()
 
 int main(int argc, char* argv[])
 {
+    return 1;
     if (argc > 0)
     {
         for (int i = 0; i < argc; ++i)
