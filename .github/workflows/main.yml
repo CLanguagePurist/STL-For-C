@@ -52,6 +52,9 @@ jobs:
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$(cat parsed.txt)
+          PARSEDOUTPUT="${PARSEDOUTPUT//'%'/'%25'}"
+          PARSEDOUTPUT="${PARSEDOUTPUT//$'\n'/'%0A'}"
+          PARSEDOUTPUT="${PARSEDOUTPUT//$'\r'/'%0D'}"
           echo "::set-output name=testcases::$PARSEDOUTPUT"
       - name: Add comment on which test fails if any
         if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
