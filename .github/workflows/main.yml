@@ -49,6 +49,7 @@ jobs:
       - name: Parse Test Log for Failed Cases
         id: testlog
         if: ${{ steps.test_verification.outputs.status }} == 'FAIL'
+        continue-on-error: true
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$"**Failed Test Case(s)**:
