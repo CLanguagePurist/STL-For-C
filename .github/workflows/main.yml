@@ -47,6 +47,7 @@ jobs:
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
       - name: Parse Test Log for Failed Cases
+        id: testlog
         if: steps.test_verification.outputs.status == 'FAIL'
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
@@ -60,7 +61,7 @@ jobs:
             label: automatic,feature
             template: .github/PULL_REQUEST_TEMPLATE/FEATURE.md
             old_string: FailedTestCases
-            new_string: ${{ steps.test_verification.outputs.testcases }}
+            new_string: ${{ steps.testlog.outputs.testcases }}
             get_diff: true
       - name: Pass or Fail Tests
         run: |
