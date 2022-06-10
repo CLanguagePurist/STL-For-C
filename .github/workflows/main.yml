@@ -8,7 +8,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "dev", "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -45,7 +45,22 @@ jobs:
         id: test_verification
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
-          
+      - name: Parse Test Log for Failed Cases
+        if: steps.test_verification.outputs.status == "FAIL"
+        run: |
+          grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
+          echo "::set-output name=testcases::'$(cat parsed.txt)'"
+      - name: Add comment on which test fails if any
+        if: steps.test_verification.outputs.status == "FAIL"
+        uses: actions/checkout@v2
+        with:
+            title: Failed Test Cases
+            assignee: ${{ github.actor }}
+            label: automatic,feature
+            template: .github/PULL_REQUEST_TEMPLATE/FEATURE.md
+            old_string: **FailedTestCases**
+            new_string: ${{ steps.test_verification.outputs.testcases }}
+            get_diff: true
       - name: Pass or Fail Tests
         run: |
           if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
