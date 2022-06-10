@@ -101,13 +101,13 @@ INDEX_TYPE GEN_LIST_INDEXOF3_NAME(LIST)
 // bool list_x_get(list_x* this, INDEX_TYPE index, LIST_TYPE* result)
 bool GEN_LIST_GET_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     if (index >= 0 && index < this->size)
     {
         *result = this->items[index];
-        return true;
+        return false;
     }
-    return false;
+    return true;
 }
 
 #define MAKE_LIST_GETRANGE_NAME(x) x ## _getrange(x* this, INDEX_TYPE index, INDEX_TYPE length, LIST_TYPE** result)
@@ -115,18 +115,18 @@ bool GEN_LIST_GET_NAME(LIST)
 // bool list_x_getrange(list_x* this, INDEX_TYPE index, INDEX_TYPE length, LIST_TYPE** result)
 bool GEN_LIST_GETRANGE_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     if (index < 0 || index >= this->size || length < 0)
-        return false;
+        return true;
     INDEX_TYPE remainder = this->size - index;
     if (length > remainder)
-        return false;
+        return true;
     
     *result = (LIST_TYPE*) malloc(length * sizeof(LIST_TYPE));
     if (result == NULL)
-        return false;
+        return true;
     memcpy(*result, &this->items[index], length * sizeof(LIST_TYPE));
-    return true;
+    return false;
 }
 #define MAKE_LIST_REALLOCATE_NAME(x) x ## _reallocate(x* this, INDEX_TYPE newLength)
 #define GEN_LIST_REALLOCATE_NAME(x) MAKE_LIST_REALLOCATE_NAME(x)
@@ -142,35 +142,36 @@ bool GEN_LIST_REALLOCATE_NAME(LIST)
         this->items = NULL;
         this->size = 0;
         this->capacity = 0;
-        return true;
+        return false;
     }
 
     if (newLength < this->capacity)
     {
         LIST_TYPE* temp = (LIST_TYPE*) realloc(this->items, newLength * sizeof(LIST_TYPE));
 
-        if (temp == NULL) { return false; }
+        if (temp == NULL) { return true; }
         
         this->items = temp;
         this->capacity = newLength;
 
         if (this->size > newLength) { this->size = newLength; }
-        return true;
+        return false;
     }
     
     INDEX_TYPE newLen = this->capacity * 2;
     
+    // In case if you're wondering, this double the size until overflow happens
     while (newLen < newLength && newLen < newLen * 2) { newLen *= 2; }
     
-    if (newLen < newLength) { return false; }
+    if (newLen < newLength) { return true; }
     
     LIST_TYPE* temp = (LIST_TYPE*) realloc(this->items, newLen * sizeof(LIST_TYPE));
     
-    if (temp == NULL) { return false; }
+    if (temp == NULL) { return true; }
 
     this->items = temp;
     this->capacity = newLen;
-    return true;
+    return false;
 }
 
 #define MAKE_LIST_ADD_NAME(x) x ## _add(x* this, LIST_TYPE item)
@@ -178,14 +179,14 @@ bool GEN_LIST_REALLOCATE_NAME(LIST)
 // bool list_x_add(list_x* this, LIST_TYPE item)
 bool GEN_LIST_ADD_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     if (this->size >= this->capacity)
     {
         bool check = GEN_LIST_REALLOCATE_NAME_USE(LIST)(this, this->size + 1);
-        if (check == false) { return false; }
+        if (check) { return true; }
     }
     this->items[this->size++] = item;
-    return true;
+    return false;
 }
 
 #define MAKE_LIST_ADDRANGE_NAME(x) x ## _addrange(x* this, LIST_TYPE* items, INDEX_TYPE items_length)
@@ -193,16 +194,16 @@ bool GEN_LIST_ADD_NAME(LIST)
 // bool list_x_addrange(list_x* this, LIST_TYPE* items, INDEX_TYPE items_length)
 bool GEN_LIST_ADDRANGE_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     INDEX_TYPE newSize = this->size + items_length;
     if (newSize >= this->capacity)
     {
         bool check = GEN_LIST_REALLOCATE_NAME_USE(LIST)(this, newSize);
-        if (check == false) return false;
+        if (check == true) return true;
     }
     memcpy(&this->items[this->size], items, items_length * sizeof(LIST_TYPE));
     this->size += items_length;
-    return true;
+    return false;
 }
 
 #define MAKE_LIST_ADD_AT_NAME(x) x ## _add_at(x* this, LIST_TYPE item, INDEX_TYPE index)
@@ -210,17 +211,17 @@ bool GEN_LIST_ADDRANGE_NAME(LIST)
 // bool list_x_add(list_x* this, LIST_TYPE item, INDEX_TYPE index)
 bool GEN_LIST_ADD_AT_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     if (this->size >= this->capacity)
     {
         bool check = GEN_LIST_REALLOCATE_NAME_USE(LIST)(this, this->size + 1);
-        if (check == false) { return false; }
+        if (check == false) { return true; }
     }
     INDEX_TYPE remainder = this->size - index;
     memmove(&this->items[index + 1], &this->items[index], (remainder + 1) * sizeof(LIST_TYPE));
     this->items[index] = item;
     this->size++;
-    return true;
+    return false;
 }
 
 #define MAKE_LIST_ADDRANGE_AT_NAME(x) x ## _addrange_at(x* this, INDEX_TYPE index, LIST_TYPE* items, INDEX_TYPE items_length)
@@ -228,18 +229,18 @@ bool GEN_LIST_ADD_AT_NAME(LIST)
 // bool list_x_addrange_at(list_x* this, INDEX_TYPE index, LIST_TYPE* items, INDEX_TYPE items_length)
 bool GEN_LIST_ADDRANGE_AT_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     INDEX_TYPE newLen = this->size + items_length;
     if (newLen >= this->capacity)
     {
         bool check = GEN_LIST_REALLOCATE_NAME_USE(LIST)(this, newLen);
-        if (check == false) { return false; }
+        if (check == true) { return true; }
     }
     INDEX_TYPE remainder = this->size - index;
     memmove(&this->items[index + items_length], &this->items[index], (remainder + 1) * sizeof(LIST_TYPE));
     memcpy(&this->items[index], items, items_length * sizeof(LIST_TYPE));
     this->size = newLen;
-    return true;
+    return false;
 }
 
 #define MAKE_LIST_REMOVE_NAME(x) x ## _remove(x* this, INDEX_TYPE index)
@@ -249,7 +250,7 @@ bool GEN_LIST_ADDRANGE_AT_NAME(LIST)
 // bool list_x_remove(list_x* this, INDEX_TYPE index)
 bool GEN_LIST_REMOVE_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     INDEX_TYPE remainder = this->size - index;
     if (remainder > 0)
     {
@@ -261,7 +262,7 @@ bool GEN_LIST_REMOVE_NAME(LIST)
     {
         return GEN_LIST_REALLOCATE_NAME_USE(LIST)(this, this->capacity / 2);
     }
-    return true;
+    return false;
 }
 
 
@@ -270,9 +271,9 @@ bool GEN_LIST_REMOVE_NAME(LIST)
 // bool list_x_removerange(list_x* this, INDEX_TYPE index, INDEX_TYPE length)
 bool GEN_LIST_REMOVERANGE_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     if (index > this->size || index < 0)
-        return false;
+        return true;
     if (this->size - index < length)
         length = this->size - index;
     if (length < 0) length = 0;
@@ -288,7 +289,7 @@ bool GEN_LIST_REMOVERANGE_NAME(LIST)
     {
         return GEN_LIST_REALLOCATE_NAME_USE(LIST)(this, this->capacity / 2);
     }
-    return true;
+    return false;
 }
 
 
@@ -297,10 +298,10 @@ bool GEN_LIST_REMOVERANGE_NAME(LIST)
 // bool list_x_remove_item(list_x* this, INDEX_TYPE index)
 bool GEN_LIST_REMOVE_ITEM_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     INDEX_TYPE index = GEN_LIST_INDEXOF_NAME_USE(LIST)(this, item);
     if (index < 0)
-        return false;
+        return true;
     return GEN_LIST_REMOVE_NAME_USE(LIST)(this, index);
 }
 
@@ -309,12 +310,12 @@ bool GEN_LIST_REMOVE_ITEM_NAME(LIST)
 // bool list_x_clear(list_x* this)
 bool GEN_LIST_CLEAR_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     free(this->items);
     this->items = NULL;
     this->capacity = 0;
     this->size = 0;
-    return true;
+    return false;
 }
 
 #define MAKE_LIST_COUNT_NAME(x) x ## _count(x* this)
@@ -322,7 +323,7 @@ bool GEN_LIST_CLEAR_NAME(LIST)
 // INDEX_TYPE list_x_count(list_x* this)
 INDEX_TYPE GEN_LIST_COUNT_NAME(LIST)
 {
-    if (this == NULL) return false;
+    if (this == NULL) return -1;
     return this->size;
 }
 
