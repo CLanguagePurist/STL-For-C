@@ -46,12 +46,12 @@ jobs:
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
       - name: Parse Test Log for Failed Cases
-        if: steps.test_verification.outputs.status == "FAIL"
+        if: steps.test_verification.outputs.status == 'FAIL'
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
           echo "::set-output name=testcases::'$(cat parsed.txt)'"
       - name: Add comment on which test fails if any
-        if: steps.test_verification.outputs.status == "FAIL"
+        if: steps.test_verification.outputs.status == 'FAIL'
         uses: actions/checkout@v2
         with:
             title: Failed Test Cases
