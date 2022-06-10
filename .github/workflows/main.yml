@@ -46,9 +46,6 @@ jobs:
         id: test_verification
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
-      - name: Debug status
-        run: |
-          echo ${{ steps.test_verification.outputs.status }}
       - name: Parse Test Log for Failed Cases
         if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         id: testlog
