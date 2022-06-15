@@ -170,7 +170,7 @@ bool GEN_TRYAPPEND_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
 
 #define MAKE_SEGMENT_TRYREMOVE_NAME(x, y) x ## _tryremove(x* this, y *result)
 #define GEN_TRYREMOVE_NAME(x, y) MAKE_SEGMENT_TRYREMOVE_NAME(x, y)
-// void segment_x_tryremove(segment_x* this, x* result)
+// void segment_x_tryappend(segment_x* this, x* result)
 bool GEN_TRYREMOVE_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
 {
     #define MAKE_SEGMENT_LOW_NAME(x) x ## _low
@@ -468,7 +468,7 @@ bool GEN_TRYDEQUEUE_NAME(CONCURRENT_QUEUE)
     while (!GEN_ISEMPTY_NAME(CONCURRENT_QUEUE)(this))
     {
         SEGMENT* head = this->m_head;
-        if (!GEN_TRYREMOVE_NAME(SEGMENT)(head, result))
+        if (GEN_TRYREMOVE_NAME(SEGMENT)(head, result))
             return false;
     }
     #ifdef CONCURRENT_QUEUE_ZERO_OUT_RESULT

@@ -17,3 +17,8 @@ test('Generic List Test - Remove Specified Item', test_list_executable, args: ['
 test('Generic List Test - Struct List', test_list_executable, args: ['test_structlist'], suite: 'core')
 test('Generic List Test - Incorrect Data Validation', test_list_executable, args: ['test_incorrectdata'], suite: 'core')
 test('Generic List Test - Reallocation Validation', test_list_executable, args: ['test_reallocation'], suite: 'core')
+
+# Test cases for Concurrent Queue
+test_concurrent_queue_executable = executable('test_concurrent_queue', 'tests/test_concurrent_queue.c')
+
+test('Generic Concurrent Queue Test - Enqueue and Dequeue', test_concurrent_queue_executable, args: ['test_enqueue_and_dequeue'], suite: 'core')
