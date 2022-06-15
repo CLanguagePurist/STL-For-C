@@ -23,8 +23,7 @@ A free library of generic data types for C programming language.
 ### Future Ideas
 1. Circular buffer
 2. Object pooling
-3. Forking off [TinyCThread](https://github.com/tinycthread/tinycthread) for portability
-4. Event Handler (Concurrent via TinyCThread dispatch)
+3. Event Handler (Concurrent via STL_CThread dispatch, forked from TinyCThread for minor patch fixes)
 
 ## Why STL for C?
 1. Usable Datatypes for C Programmers
