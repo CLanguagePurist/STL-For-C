@@ -37,12 +37,10 @@ int Test_Enqueue_And_Dequeue()
     {
         result = 0;
         if (concurrent_queue_int32_t_trypeek(queue, &result)) return 10;
-        printf("Result: %i\nIndex: %i\n", result, i);
         if (result != i) return 11;
         if (concurrent_queue_int32_t_getcount(queue) != 1024 - (i - 1)) return 12;
         result = 0;
         if (concurrent_queue_int32_t_trydequeue(queue, &result)) return 13;
-        printf("___Result: %i\nIndex: %i\n", result, i);
         if (result != i) return 14;
         if (concurrent_queue_int32_t_getcount(queue) != 1024 - i) return 15;
     }
