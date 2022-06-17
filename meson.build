@@ -1,5 +1,7 @@
 project('stlc', 'c')
 
+tinycthread_include_dir = include_directories('STL_CThread/source')
+
 # Test cases for List/Vector
 test_list_executable = executable('test_list', 'tests/test_list.c')
 
@@ -19,6 +21,14 @@ test('Generic List Test - Incorrect Data Validation', test_list_executable, args
 test('Generic List Test - Reallocation Validation', test_list_executable, args: ['test_reallocation'], suite: 'core')
 
 # Test cases for Concurrent Queue
-test_concurrent_queue_executable = executable('test_concurrent_queue', 'tests/test_concurrent_queue.c')
+test_concurrent_queue_executable = executable('test_concurrent_queue', 'tests/test_concurrent_queue.c', 'STL_CThread/source/tinycthread.c', include_directories: tinycthread_include_dir)
 
 test('Generic Concurrent Queue Test - Enqueue and Dequeue', test_concurrent_queue_executable, args: ['test_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 1', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 2', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 3', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 4', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 5', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 6', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 7', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
+test('Generic Concurrent Queue Test - Multithread Enqueue And Dequeue - Run 8', test_concurrent_queue_executable, args: ['test_multithread_enqueue_and_dequeue'], suite: 'core')
