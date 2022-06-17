@@ -83,11 +83,10 @@ int enqueue_to_global_queue(void *arg)
     return 0;
 }
 
-int Test_Multithread_Enqueue_And_Dequeue()
+int Test_Multithread_Enqueue()
 {
     global_queue = concurrent_queue_int32_t_new();
     thrd_t *threads = (thrd_t *)malloc(sizeof(thrd_t) * 8);
-    // Run Test for 256 times
     int32_t args[16];
     // Dispatch 8 Threads
     for (int32_t threadIndex = 0; threadIndex < 8; ++threadIndex)
@@ -117,16 +116,68 @@ int Test_Multithread_Enqueue_And_Dequeue()
     {
         if (validator[i] == 0)
         {
-            printf("%i %i fail\n", i, validator[i]);
             return 2;
         }
     }
-    printf("It succeed?!\n");
     for (int threadId = 0; threadId < 8; ++threadId)
     {
         thrd_detach(threads[threadId]);
     }
     free(validator);
+    completedCount = 0;
+    free(threads);
+    return 0;
+}
+
+static int* dequeueResult;
+
+int dequeue_from_global_queue(void *arg)
+{
+    int32_t length = ((int32_t *)arg)[0];
+    for (int32_t i = 0; i < length; ++i)
+    {
+        int32_t res = 0;
+        if (concurrent_queue_int32_t_trydequeue(global_queue, &res))
+            return 1;
+        dequeueResult[res] = 1;
+    }
+    ++completedCount;
+    return 0;
+}
+
+int Test_Multithread_Dequeue()
+{
+    global_queue = concurrent_queue_int32_t_new();
+    thrd_t *threads = (thrd_t *)malloc(sizeof(thrd_t) * 8);
+    dequeueResult = (int32_t *)calloc(1048576 * 8, sizeof(int32_t));
+    for (int32_t i = 0; i < 1048576 * 8; ++i)
+    {
+        if (concurrent_queue_int32_t_enqueue(global_queue, i)) return 1;
+    }
+    int32_t args = 1048576;
+    // Dispatch 8 Threads
+    for (int32_t threadIndex = 0; threadIndex < 8; ++threadIndex)
+    {
+        thrd_create(&threads[threadIndex], dequeue_from_global_queue, &args);
+    }
+
+    while (completedCount != 8)
+    {
+        thrd_yield();
+    }
+
+    for (int32_t i = 0; i < 1048576 * 8; ++i)
+    {
+        if (dequeueResult[i] == 0)
+        {
+            return 2;
+        }
+    }
+    for (int threadId = 0; threadId < 8; ++threadId)
+    {
+        thrd_detach(threads[threadId]);
+    }
+    free(dequeueResult);
     completedCount = 0;
     free(threads);
     return 0;
@@ -142,9 +193,13 @@ int main(int argc, char *argv[])
             {
                 return Test_Enqueue_And_Dequeue();
             }
-            if (strcmp(argv[i], "test_multithread_enqueue_and_dequeue") == 0)
+            if (strcmp(argv[i], "test_multithread_enqueue") == 0)
             {
-                return Test_Multithread_Enqueue_And_Dequeue();
+                return Test_Multithread_Enqueue();
+            }
+            if (strcmp(argv[i], "test_multithread_dequeue") == 0)
+            {
+                return Test_Multithread_Dequeue();
             }
         }
     }
