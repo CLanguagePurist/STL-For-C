@@ -132,7 +132,78 @@ bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     return false;
 }
 
+#define MAKE_CONCURRENT_STACK_TRYPEEK_NAME(x, y) x ## _trypeek(x* this, y* result)
+#define GEN_TRYPEEK_NAME(x, y) MAKE_CONCURRENT_STACK_TRYPEEK_NAME(x, y)
+bool GEN_TRYPEEK_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
+{
+    if (this == NULL) return true;
+    NODE node = {};
+    __atomic_load(this->m_head, &node, __ATOMIC_SEQ_CST);
+    *result = node.m_value;
+    return false;
+}
 
+#define MAKE_CONCURRENT_STACK_TRYPOP_NAME(x, y) x ## _trypop(x* this, y* result)
+#define GEN_TRYPOP_NAME(x, y) MAKE_CONCURRENT_STACK_TRYPOP_NAME(x, y)
+bool GEN_TRYPOP_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
+{
+    if (this == NULL) return true;
+    NODE* head = this->m_head;
+    if (head == NULL)
+    {
+        return true;
+    }
+    while (!__atomic_compare_exchange_n(&this->m_head, head, &head->m_next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    {
+        atomic_signal_fence(memory_order_acq_rel);
+    }
+    *result = head->m_value;
+    return false;
+}
+
+
+#define MAKE_CONCURRENT_STACK_TRYPOPRANGE_NAME(x, y) x ## _trypoprange(x* this, y* result, INDEX_TYPE* result_length, INDEX_TYPE count)
+#define GEN_TRYPOPRANGE_NAME(x, y) MAKE_CONCURRENT_STACK_TRYPOPRANGE_NAME(x, y)
+bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
+{
+    if (this == NULL || count <= 0) return true;
+
+    NODE* poppedHead = NULL;
+    NODE* next = NULL;
+    __atomic_load(&this->m_head, &poppedHead, __ATOMIC_SEQ_CST);
+    if (poppedHead == NULL)
+    {
+        return true;
+    }
+    if (!__atomic_compare_exchange_n(&this->m_head, poppedHead, &poppedHead->m_next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    {
+        return true;
+    }
+    INDEX_TYPE nodesCount = 1;
+    for (; nodesCount < count && next != NULL; ++nodesCount)
+    {
+        next = next->m_next;
+    }
+    if (!__atomic_compare_exchange_n(&this->m_head, poppedHead, &next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    {
+        return true;
+    }
+    result[0] = poppedHead->m_value;
+    poppedHead = poppedHead->m_next;
+    for (INDEX_TYPE i = 1; i < nodesCount; ++i)
+    {
+        result[i] = poppedHead->m_value;
+        poppedHead = poppedHead->m_next;
+    }
+    return false;
+}
+
+#undef GEN_TRYPOPRANGE_NAME
+#undef MAKE_CONCURRENT_STACK_TRYPOPRANGE_NAME
+#undef GEN_TRYPOP_NAME
+#undef MAKE_CONCURRENT_STACK_TRYPOP_NAME
+#undef GEN_TRYPEEK_NAME
+#undef MAKE_CONCURRENT_STACK_TRYPEEK_NAME
 #undef GEN_PUSHRANGE_NAME
 #undef MAKE_CONCURRENT_STACK_PUSHRANGE_NAME
 #undef GEN_PUSH_NAME
