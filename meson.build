@@ -45,3 +45,4 @@ test('Generic Concurrent Queue Test - Multithread Dequeue - Run 8', test_concurr
 test_concurrent_stack_executable = executable('test_concurrent_stack', 'tests/test_concurrent_stack.c', 'STL_CThread/source/tinycthread.c', include_directories: tinycthread_include_dir)
 
 test('Generic Concurrent Stack Test - Push and Pop', test_concurrent_stack_executable, args: ['test_push_and_pop'], suite: 'core')
+test('Generic Concurrent Stack Test - Push Range and Pop Range', test_concurrent_stack_executable, args: ['test_pushrange_and_poprange'], suite: 'core')
