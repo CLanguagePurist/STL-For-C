@@ -25,6 +25,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+      - uses: actions/setup-dotnet@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.x'
@@ -54,7 +55,7 @@ jobs:
         id: testlog
         continue-on-error: true
         run: |
-          grep -P "^[A-Za-z\s0-9\-\/]*FAIL[\s]*[0-9.]*s$" ./build/meson-logs/testlog.txt > parsed.txt
+          grep -E "^[A-Za-z\s0-9\-\/]*FAIL[\s]*[0-9.]*s$" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$"**Failed Test Case(s)**:
           $(cat parsed.txt)"
           PARSEDOUTPUT="${PARSEDOUTPUT//'%'/'%25'}"
