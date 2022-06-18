@@ -44,12 +44,10 @@ int Test_PushRange_And_PopRange()
     int32_t output[1024];
     int64_t resultLength = 0;
     concurrent_stack_int32_t_pushrange(stack, input, 1024);
-    printf("Debug: %i\n", stack->m_head->m_value);
     for (int i = 1024; i > 0; --i)
     {
         int32_t item = 0;
         concurrent_stack_int32_t_trypop(stack, &item);
-        printf("%i != %i\n", item, i);
         if (item != i) return 1;
     }
     concurrent_stack_int32_t_pushrange(stack, input, 1024);
@@ -57,7 +55,6 @@ int Test_PushRange_And_PopRange()
 
     for (int i = 0; i < 1024; ++i)
     {
-        printf("%i\n", i);
         if (output[i] != 1024 - i) return 2;
     }
 

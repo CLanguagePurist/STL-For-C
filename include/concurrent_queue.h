@@ -32,7 +32,7 @@ typedef struct {
     volatile INDEX_TYPE m_index;
     volatile INDEX_TYPE m_low;
     volatile INDEX_TYPE m_high;
-    volatile void* m_source;
+    _Atomic(void*) m_source;
 } SEGMENT;
 
 typedef struct {
