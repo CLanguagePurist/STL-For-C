@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
+
+#ifndef STL_FOR_C_IMPLEMENTATION_ONLY
+    #define STL_FOR_C_IMPLEMENTATION_ONLY
+#endif
 #include "include/concurrent_stack.h"
 
 #define MAKE_NODE_NAME(x) concurrent_stack_node_ ## x

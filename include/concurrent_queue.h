@@ -25,20 +25,20 @@
     #define INDEX_TYPE int64_t
 #endif
 
+#ifdef STL_FOR_C_IMPLEMENTATION_ONLY
 typedef struct {
-    volatile CONCURRENT_QUEUE_TYPE* m_array;
-    volatile bool* m_state;
-    volatile void* m_next;
-    volatile INDEX_TYPE m_index;
-    volatile INDEX_TYPE m_low;
-    volatile INDEX_TYPE m_high;
+    _Atomic(CONCURRENT_QUEUE_TYPE*) m_array;
+    _Atomic(bool*) m_state;
+    _Atomic(void*) m_next;
+    INDEX_TYPE _Atomic m_index;
+    INDEX_TYPE _Atomic m_low;
+    INDEX_TYPE _Atomic m_high;
     _Atomic(void*) m_source;
 } SEGMENT;
 
 typedef struct {
     SEGMENT* m_head;
     SEGMENT* m_tail;
-    volatile int m_numSnapshotTakers;
 } CONCURRENT_QUEUE;
 
 #define MAKE_SEGMENT_NEW_NAME(x, y) x ## _new(INDEX_TYPE index, y* source)
@@ -125,6 +125,10 @@ INDEX_TYPE GEN_HIGH_NAME(SEGMENT);
 #undef MAKE_SEGMENT_HIGH_NAME
 #undef GEN_HIGH_NAME
 
+#else
+typedef void* CONCURRENT_QUEUE;
+#endif
+
 #define MAKE_CONCURRENTQUEUE_NEW_NAME(x) x ## _new()
 #define GEN_NEW_NAME(x) MAKE_CONCURRENTQUEUE_NEW_NAME(x)
 // concurrentqueue_x* concurrentqueue_x_new()
@@ -181,6 +185,10 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_QUEUE);
 #undef MAKE_CONCURRENTQUEUE_TRYPEEK_NAME
 #undef GEN_TRYPEEK_NAME
 
+#undef MAKE_CONCURRENT_QUEUE_NAME_PTR
+#undef CONCURRENT_QUEUE_NAME_PTR
+#undef CONCURRENT_QUEUE_PTR
+
 #undef MAKE_SEGMENT_NAME
 #undef SEGMENT_NAME
 #undef SEGMENT
@@ -188,7 +196,3 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_QUEUE);
 #undef MAKE_CONCURRENT_QUEUE_NAME
 #undef CONCURRENT_QUEUE_NAME
 #undef CONCURRENT_QUEUE
-
-#undef MAKE_CONCURRENT_QUEUE_NAME_PTR
-#undef CONCURRENT_QUEUE_NAME_PTR
-#undef CONCURRENT_QUEUE_PTR
