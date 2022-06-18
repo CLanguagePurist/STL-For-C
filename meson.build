@@ -1,6 +1,7 @@
 project('stlc', 'c')
 
 tinycthread_include_dir = include_directories('STL_CThread/source')
+thread_dep = dependency('threads')
 
 # Test cases for List/Vector
 test_list_executable = executable('test_list', 'tests/test_list.c')
@@ -21,7 +22,7 @@ test('Generic List Test - Incorrect Data Validation', test_list_executable, args
 test('Generic List Test - Reallocation Validation', test_list_executable, args: ['test_reallocation'], suite: 'core')
 
 # Test cases for Concurrent Queue
-test_concurrent_queue_executable = executable('test_concurrent_queue', 'tests/test_concurrent_queue.c', 'STL_CThread/source/tinycthread.c', include_directories: tinycthread_include_dir)
+test_concurrent_queue_executable = executable('test_concurrent_queue', 'tests/test_concurrent_queue.c', 'STL_CThread/source/tinycthread.c', include_directories: tinycthread_include_dir, dependencies : thread_dep)
 
 test('Generic Concurrent Queue Test - Enqueue and Dequeue', test_concurrent_queue_executable, args: ['test_enqueue_and_dequeue'], suite: 'core')
 test('Generic Concurrent Queue Test - Multithread Enqueue - Run 1', test_concurrent_queue_executable, args: ['test_multithread_enqueue'], suite: 'core')
@@ -42,7 +43,7 @@ test('Generic Concurrent Queue Test - Multithread Dequeue - Run 7', test_concurr
 test('Generic Concurrent Queue Test - Multithread Dequeue - Run 8', test_concurrent_queue_executable, args: ['test_multithread_dequeue'], suite: 'core')
 
 # Test cases for Concurrent Stack
-test_concurrent_stack_executable = executable('test_concurrent_stack', 'tests/test_concurrent_stack.c', 'STL_CThread/source/tinycthread.c', include_directories: tinycthread_include_dir)
+test_concurrent_stack_executable = executable('test_concurrent_stack', 'tests/test_concurrent_stack.c', 'STL_CThread/source/tinycthread.c', include_directories: tinycthread_include_dir, dependencies : thread_dep)
 
 test('Generic Concurrent Stack Test - Push and Pop', test_concurrent_stack_executable, args: ['test_push_and_pop'], suite: 'core')
 test('Generic Concurrent Stack Test - Push Range and Pop Range', test_concurrent_stack_executable, args: ['test_pushrange_and_poprange'], suite: 'core')

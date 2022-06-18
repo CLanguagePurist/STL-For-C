@@ -111,26 +111,20 @@ bool GEN_PUSH_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL || length <= 0) return true;
-    NODE* head = (NODE*)calloc(sizeof(NODE), 1);
-    NODE* tail = head;
+    NODE* head = (NODE*)calloc(sizeof(NODE), length);
+    NODE* tail = head + length - 1;
     head->m_value = items[0];
-    for (INDEX_TYPE i = 1; i < length; ++i)
+    for (INDEX_TYPE i = 0; i < length; ++i)
     {
-        NODE* node = (NODE*)malloc(sizeof(NODE));
-        node->m_next = head;
-        node->m_value = items[i];
-        head = node;
+        if (&head[i] != tail)
+            (&head[i])->m_next = (&head[i + 1]);
+        (&head[i])->m_value = items[length - i - 1];
     }
     tail->m_next = this->m_head;
 
     if (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&tail->m_next, head))
     {
-        for (INDEX_TYPE i = 0; i < length; ++i)
-        {
-            NODE* curr = (NODE*) head->m_next;
-            free(head);
-            head = curr;
-        }
+        free(head);
         return true;
     }
     return false;
