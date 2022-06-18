@@ -35,6 +35,44 @@ int Test_Push_And_Pop()
     return 0;
 }
 
+int Test_PushRange_And_PopRange()
+{
+    concurrent_stack_int32_t* stack = concurrent_stack_int32_t_new();
+    int32_t* input = (int32_t*)calloc(1024, sizeof(int32_t));
+    for (int i = 0; i < 1024; ++i)
+        input[i] = 1;
+    int32_t output[1024];
+    int32_t resultLength = 0;
+    concurrent_stack_int32_t_pushrange(stack, input, 1024);
+    for (int i = 0; i < 1024; ++i)
+    {
+        int32_t item;
+        concurrent_stack_int32_t_trypop(stack, &item);
+        printf("debug: %i != %i\n", item, i);
+        if (item != i) return 1;
+    }
+    concurrent_stack_int32_t_pushrange(stack, input, 1024);
+    concurrent_stack_int32_t_trypoprange(stack, output, &resultLength, 1024);
+    for (int y = 0; y < 32; ++y)
+    {
+        for (int x = 0; x < 32; ++x)
+        {
+            if (output[y * 32 + x] == 1)
+                printf("X ");
+            else 
+                printf(". ");
+        }
+        printf("\n");
+    }
+    for (int32_t i = 0; i < 1024; ++i)
+    {
+        if (output[i] != 1) return 2;
+    }
+
+    concurrent_stack_int32_t_destroy(stack);
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc > 0)
@@ -44,6 +82,10 @@ int main(int argc, char* argv[])
             if (strcmp(argv[i], "test_push_and_pop") == 0)
             {
                 return Test_Push_And_Pop();
+            }
+            if (strcmp(argv[i], "test_pushrange_and_poprange") == 0)
+            {
+                return Test_PushRange_And_PopRange();
             }
         }
     }
