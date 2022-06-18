@@ -7,6 +7,7 @@
 #endif
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 
 #define MAKE_NODE_NAME(x) concurrent_stack_node_ ## x
 #define NODE_NAME(x) MAKE_NODE_NAME(x)
@@ -19,12 +20,12 @@
 // Node implementation
 typedef struct {
     CONCURRENT_STACK_TYPE m_value;
-    void* m_next;
+    _Atomic(void*) m_next;
 } NODE;
 
 // Concurrent Stack Implementation
 typedef struct  {
-    NODE* m_head;
+    _Atomic(NODE*) m_head;
 } CONCURRENT_STACK;
 
 
