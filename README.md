@@ -28,7 +28,7 @@ A free library of generic data types for C programming language and any other pr
 
 ## How to use this library?
 
-#[**Read the Wiki**](https://github.com/CLanguagePurist/STL-For-C/wiki)
+[**Read the Wiki**](https://github.com/CLanguagePurist/STL-For-C/wiki)
 
 ## Licensing
 
