@@ -8,10 +8,6 @@
 #include <stdatomic.h>
 #include "include/concurrent_stack.h"
 
-#ifndef BACKOFF_MAX_YIELDS
-    #define BACKOFF_MAX_YIELDS 8
-#endif
-
 #define MAKE_NODE_NAME(x) concurrent_stack_node_ ## x
 #define NODE_NAME(x) MAKE_NODE_NAME(x)
 #define NODE NODE_NAME(CONCURRENT_STACK_TYPE)
@@ -19,18 +15,6 @@
 #define MAKE_CONCURRENT_STACK_NAME(x) concurrent_stack_ ## x
 #define CONCURRENT_STACK_NAME(x) MAKE_CONCURRENT_STACK_NAME(x)
 #define CONCURRENT_STACK CONCURRENT_STACK_NAME(CONCURRENT_STACK_TYPE)
-
-// Node implementation
-typedef struct {
-    CONCURRENT_STACK_TYPE m_value;
-    NODE* m_next;
-} NODE;
-
-// Concurrent Stack Implementation
-typedef struct  {
-    NODE* m_head;
-} CONCURRENT_STACK;
-
 
 #define MAKE_CONCURRENT_STACK_NEW_NAME(x) x ## _new()
 #define GEN_NEW_NAME(x) MAKE_CONCURRENT_STACK_NEW_NAME(x)
