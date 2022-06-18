@@ -71,8 +71,8 @@ bool GEN_ISEMPTY_NAME(SEGMENT);
 
 #define MAKE_SEGMENT_UNSAFE_ADD_NAME(x, y) x ## _unsafe_add(x* this, y value)
 #define GEN_UNSAFE_ADD_NAME(x, y) MAKE_SEGMENT_UNSAFE_ADD_NAME(x, y)
-// void segment_x_unsafe_add(segment_x* this, x value)
-void GEN_UNSAFE_ADD_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE);
+// bool segment_x_unsafe_add(segment_x* this, x value)
+bool GEN_UNSAFE_ADD_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE);
 #undef MAKE_SEGMENT_UNSAFE_ADD_NAME
 #undef GEN_UNSAFE_ADD_NAME
 
@@ -85,8 +85,8 @@ SEGMENT* GEN_UNSAFE_GROW_NAME(SEGMENT);
 
 #define MAKE_SEGMENT_GROW_NAME(x) x ## _grow(x* this)
 #define GEN_GROW_NAME(x) MAKE_SEGMENT_GROW_NAME(x)
-// void segment_x_grow(segment_x* this)
-void GEN_GROW_NAME(SEGMENT);
+// bool segment_x_grow(segment_x* this)
+bool GEN_GROW_NAME(SEGMENT);
 #undef MAKE_SEGMENT_GROW_NAME
 #undef GEN_GROW_NAME
 
@@ -162,8 +162,8 @@ INDEX_TYPE GEN_GETCOUNT_NAME(CONCURRENT_QUEUE);
 
 #define MAKE_CONCURRENTQUEUE_ENQUEUE_NAME(x) x ## _enqueue(x* this, CONCURRENT_QUEUE_TYPE item)
 #define GEN_ENQUEUE_NAME(x) MAKE_CONCURRENTQUEUE_ENQUEUE_NAME(x)
-// void concurrentqueue_x_enqueue(concurrentqueue_x* this, x item)
-void GEN_ENQUEUE_NAME(CONCURRENT_QUEUE);
+// bool concurrentqueue_x_enqueue(concurrentqueue_x* this, x item)
+bool GEN_ENQUEUE_NAME(CONCURRENT_QUEUE);
 #undef MAKE_CONCURRENTQUEUE_ENQUEUE_NAME
 #undef GEN_ENQUEUE_NAME
 

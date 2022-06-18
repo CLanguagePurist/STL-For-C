@@ -1,0 +1,3 @@
+[submodule "STL_CThread"]
+	path = STL_CThread
+	url = https://github.com/CLanguagePurist/STL_CThread

@@ -85,13 +85,14 @@ bool GEN_ISEMPTY_NAME(SEGMENT)
 
 #define MAKE_SEGMENT_UNSAFE_ADD_NAME(x, y) x ## _unsafe_add(x* this, y value)
 #define GEN_UNSAFE_ADD_NAME(x, y) MAKE_SEGMENT_UNSAFE_ADD_NAME(x, y)
-// void segment_x_unsafe_add(segment_x* this, x value)
-void GEN_UNSAFE_ADD_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
+// bool segment_x_unsafe_add(segment_x* this, x value)
+bool GEN_UNSAFE_ADD_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
 {
-    if (this == NULL) return;
+    if (this == NULL) return true;
     __atomic_fetch_add(&this->m_high, 1, __ATOMIC_SEQ_CST);
     this->m_array[this->m_high] = value;
     this->m_state[this->m_high] = true;
+    return false;
 }
 #undef MAKE_SEGMENT_UNSAFE_ADD_NAME
 #undef GEN_UNSAFE_ADD_NAME
@@ -116,16 +117,16 @@ SEGMENT* GEN_UNSAFE_GROW_NAME(SEGMENT)
 
 #define MAKE_SEGMENT_GROW_NAME(x) x ## _grow(x* this)
 #define GEN_GROW_NAME(x) MAKE_SEGMENT_GROW_NAME(x)
-// void segment_x_grow(segment_x* this)
-void GEN_GROW_NAME(SEGMENT)
+// bool segment_x_grow(segment_x* this)
+bool GEN_GROW_NAME(SEGMENT)
 {
     #define MAKE_SEGMENT_NEW_NAME(x) x ## _new
     #define GEN_NEW_NAME(x) MAKE_SEGMENT_NEW_NAME(x)
-    if (this == NULL) return;
+    if (this == NULL) return true;
     SEGMENT* newSegment = GEN_NEW_NAME(SEGMENT)(this->m_index + 1, (CONCURRENT_QUEUE*) this->m_source);
     this->m_next = newSegment;
     ((CONCURRENT_QUEUE*)this->m_source)->m_tail = (SEGMENT*)this->m_next;
-
+    return false;
     #undef MAKE_SEGMENT_NEW_NAME
     #undef GEN_NEW_NAME
 }
@@ -169,14 +170,14 @@ bool GEN_TRYAPPEND_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
 
 #define MAKE_SEGMENT_TRYREMOVE_NAME(x, y) x ## _tryremove(x* this, y *result)
 #define GEN_TRYREMOVE_NAME(x, y) MAKE_SEGMENT_TRYREMOVE_NAME(x, y)
-// void segment_x_tryappend(segment_x* this, x* result)
+// void segment_x_tryremove(segment_x* this, x* result)
 bool GEN_TRYREMOVE_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
 {
     #define MAKE_SEGMENT_LOW_NAME(x) x ## _low
     #define GEN_LOW_NAME(x) MAKE_SEGMENT_LOW_NAME(x)
     #define MAKE_SEGMENT_HIGH_NAME(x) x ## _high
     #define GEN_HIGH_NAME(x) MAKE_SEGMENT_HIGH_NAME(x)
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     INDEX_TYPE lowLocal = GEN_LOW_NAME(SEGMENT)(this);
     INDEX_TYPE highLocal = GEN_HIGH_NAME(SEGMENT)(this);
     while (lowLocal <= highLocal)
@@ -210,7 +211,7 @@ bool GEN_TRYREMOVE_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
                 }
                 ((CONCURRENT_QUEUE*)this->m_source)->m_head = (SEGMENT*)this->m_next;
             }
-            return true;
+            return false;
         }
         else
         {
@@ -223,7 +224,7 @@ bool GEN_TRYREMOVE_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
     #ifdef CONCURRENT_QUEUE_ZERO_OUT_RESULT
         memset(result, 0, sizeof(CONCURRENT_QUEUE_TYPE));
     #endif
-    return false;
+    return true;
 
     #undef MAKE_SEGMENT_LOW_NAME
     #undef GEN_LOW_NAME
@@ -431,18 +432,18 @@ INDEX_TYPE GEN_GETCOUNT_NAME(CONCURRENT_QUEUE)
 
 #define MAKE_CONCURRENTQUEUE_ENQUEUE_NAME(x) x ## _enqueue(x* this, CONCURRENT_QUEUE_TYPE item)
 #define GEN_ENQUEUE_NAME(x) MAKE_CONCURRENTQUEUE_ENQUEUE_NAME(x)
-// void concurrentqueue_x_enqueue(concurrentqueue_x* this, x item)
-void GEN_ENQUEUE_NAME(CONCURRENT_QUEUE)
+// bool concurrentqueue_x_enqueue(concurrentqueue_x* this, x item)
+bool GEN_ENQUEUE_NAME(CONCURRENT_QUEUE)
 {
     #define MAKE_SEGMENT_TRYAPPEND_NAME(x) x ## _tryappend
     #define GEN_SEGMENT_TRYAPPEND_NAME(x) MAKE_SEGMENT_TRYAPPEND_NAME(x)
-    if (this == NULL) return;
+    if (this == NULL) return true;
     while (true)
     {
         SEGMENT* tail = this->m_tail;
         if (GEN_SEGMENT_TRYAPPEND_NAME(SEGMENT)(tail, item) == true)
         {
-            return;
+            return false;
         }
 
         atomic_signal_fence(memory_order_acq_rel);
@@ -463,12 +464,12 @@ bool GEN_TRYDEQUEUE_NAME(CONCURRENT_QUEUE)
     #define GEN_ISEMPTY_NAME(x) MAKE_CONCURRENTQUEUE_ISEMPTY_NAME(x)
     #define MAKE_SEGMENT_TRYREMOVE_NAME(x) x ## _tryremove
     #define GEN_TRYREMOVE_NAME(x) MAKE_SEGMENT_TRYREMOVE_NAME(x)
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     while (!GEN_ISEMPTY_NAME(CONCURRENT_QUEUE)(this))
     {
         SEGMENT* head = this->m_head;
-        if (GEN_TRYREMOVE_NAME(SEGMENT)(head, result))
-            return true;
+        if (!GEN_TRYREMOVE_NAME(SEGMENT)(head, result))
+            return false;
     }
     #ifdef CONCURRENT_QUEUE_ZERO_OUT_RESULT
         memset(result, 0, sizeof(CONCURRENT_QUEUE_TYPE));
@@ -492,7 +493,7 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_QUEUE)
     #define GEN_ISEMPTY_NAME(x) MAKE_CONCURRENTQUEUE_ISEMPTY_NAME(x)
     #define MAKE_SEGMENT_TRYPEEK_NAME(x) x ## _trypeek
     #define GEN_SEG_TRYPEEK_NAME(x) MAKE_SEGMENT_TRYPEEK_NAME(x)
-    if (this == NULL) return false;
+    if (this == NULL) return true;
     __atomic_fetch_add(&this->m_numSnapshotTakers, 1, __ATOMIC_SEQ_CST);
 
     while (!GEN_ISEMPTY_NAME(CONCURRENT_QUEUE)(this))
@@ -501,7 +502,7 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_QUEUE)
         if (GEN_SEG_TRYPEEK_NAME(SEGMENT)(head, result))
         {
             __atomic_fetch_sub(&this->m_numSnapshotTakers, 1, __ATOMIC_SEQ_CST);
-            return true;
+            return false;
         }
     }
     #ifdef CONCURRENT_QUEUE_ZERO_OUT_RESULT

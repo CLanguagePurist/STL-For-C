@@ -50,7 +50,7 @@ jobs:
         if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         id: testlog
         run: |
-          grep -P "^[A-Za-z\s0-9\-\/]*FAIL" ./build/meson-logs/testlog.txt > parsed.txt
+          grep -P "^[A-Za-z\s0-9\-\/]*FAIL[\s]*[0-9.]*s$" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$"**Failed Test Case(s)**:
           $(cat parsed.txt)"
           PARSEDOUTPUT="${PARSEDOUTPUT//'%'/'%25'}"
