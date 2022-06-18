@@ -78,12 +78,14 @@ bool GEN_CLEAR_NAME(CONCURRENT_STACK)
     if (this == NULL) return true;
     void* nullPtr = NULL;
     NODE* original = NULL;
-    __atomic_exchange(&this->m_head, (volatile void**)&nullPtr, &original, __ATOMIC_SEQ_CST);
+    original = atomic_exchange(&this->m_head, nullPtr);
     if (original == NULL)
         return false;
-    for (NODE* current = original; current != NULL; current = current->m_next)
+    for (NODE* current = original; current != NULL;)
     {
+        NODE* next = current->m_next;
         free(current);
+        current = next;
     }
     return false;
 }
@@ -94,9 +96,12 @@ bool GEN_PUSH_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
     NODE* newNode = (NODE*)malloc(sizeof(NODE));
-    if (!__atomic_compare_exchange_n(&this->m_head, &newNode->m_next, newNode, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    newNode->m_next = atomic_load(&this->m_head);
+    newNode->m_value = item;
+    if (!atomic_compare_exchange_strong(&this->m_head, &newNode->m_next, newNode))
     {
-        atomic_signal_fence(memory_order_acq_rel);
+        free(newNode);
+        return true;
     }
     return false;
 }
@@ -118,7 +123,7 @@ bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     }
     tail->m_next = this->m_head;
 
-    while (!__atomic_compare_exchange_n(&this->m_head, &tail->m_next, head, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    while (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&tail->m_next, head))
     {
         atomic_signal_fence(memory_order_acq_rel);
     }
@@ -145,9 +150,9 @@ bool GEN_TRYPOP_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     {
         return true;
     }
-    while (!__atomic_compare_exchange_n(&this->m_head, head, &head->m_next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    if (!atomic_compare_exchange_strong(&this->m_head, &head, (NODE*)head->m_next))
     {
-        atomic_signal_fence(memory_order_acq_rel);
+        return true;
     }
     *result = head->m_value;
     return false;
@@ -160,14 +165,13 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL || count <= 0) return true;
 
-    NODE* poppedHead = NULL;
+    NODE* poppedHead = atomic_load(&this->m_head);
     NODE* next = NULL;
-    __atomic_load(&this->m_head, &poppedHead, __ATOMIC_SEQ_CST);
     if (poppedHead == NULL)
     {
         return true;
     }
-    if (!__atomic_compare_exchange_n(&this->m_head, poppedHead, &poppedHead->m_next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    if (!atomic_compare_exchange_strong(&this->m_head, &poppedHead, (NODE*)poppedHead->m_next))
     {
         return true;
     }
@@ -176,7 +180,7 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     {
         next = next->m_next;
     }
-    if (!__atomic_compare_exchange_n(&this->m_head, poppedHead, &next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    if (!atomic_compare_exchange_strong(&this->m_head, &poppedHead, next))
     {
         return true;
     }
