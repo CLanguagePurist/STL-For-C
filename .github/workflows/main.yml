@@ -46,11 +46,13 @@ jobs:
         
       - name: Check Logs for Tests
         id: test_verification
+        continue-on-error: true
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
       - name: Parse Test Log for Failed Cases
         if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         id: testlog
+        continue-on-error: true
         run: |
           grep -P "^[A-Za-z\s0-9\-\/]*FAIL[\s]*[0-9.]*s$" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$"**Failed Test Case(s)**:
@@ -63,6 +65,7 @@ jobs:
         if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         uses: jungwinter/comment@v1
         id: create
+        continue-on-error: true
         with:
           type: create
           body: '${{ steps.testlog.outputs.testcases }}'
@@ -101,13 +104,15 @@ jobs:
         
       - name: Check Logs for Tests
         id: test_verification
+        continue-on-error: true
         run: |
           if [[ -n $(grep -E '^Fail:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Timeout:[ ]*0$' ./build/meson-logs/testlog.txt) ]] && [[ -n $(grep -E '^Unexpected Pass:[ ]*0$' ./build/meson-logs/testlog.txt) ]]; then echo "::set-output name=status::'PASS'"; else echo "::set-output name=status::'FAIL'"; fi
       - name: Parse Test Log for Failed Cases
         if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         id: testlog
+        continue-on-error: true
         run: |
-          grep -P "^[A-Za-z\s0-9\-\/]*FAIL[\s]*[0-9.]*s$" ./build/meson-logs/testlog.txt > parsed.txt
+          grep -E "^[A-Za-z\s0-9\-\/]*FAIL[\s]*[0-9.]*s$" ./build/meson-logs/testlog.txt > parsed.txt
           PARSEDOUTPUT=$"**Failed Test Case(s)**:
           $(cat parsed.txt)"
           PARSEDOUTPUT="${PARSEDOUTPUT//'%'/'%25'}"
@@ -118,6 +123,7 @@ jobs:
         if: "contains(steps.test_verification.outputs.status, 'FAIL')"
         uses: jungwinter/comment@v1
         id: create
+        continue-on-error: true
         with:
           type: create
           body: '${{ steps.testlog.outputs.testcases }}'
