@@ -2,7 +2,9 @@
     #error There must be a provided type for CONCURRENT_QUEUE_TYPE and it must be defined prior to using this code!
     #define CONCURRENT_QUEUE_TYPE int32_t
 #endif
-
+#ifndef STL_FOR_C_IMPLEMENTATION_ONLY
+    #define STL_FOR_C_IMPLEMENTATION_ONLY
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
@@ -89,7 +91,7 @@ bool GEN_ISEMPTY_NAME(SEGMENT)
 bool GEN_UNSAFE_ADD_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
 {
     if (this == NULL) return true;
-    __atomic_fetch_add(&this->m_high, 1, __ATOMIC_SEQ_CST);
+    atomic_fetch_add(&this->m_high, 1);
     this->m_array[this->m_high] = value;
     this->m_state[this->m_high] = true;
     return false;
@@ -145,7 +147,7 @@ bool GEN_TRYAPPEND_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
     }
 
     long newHigh = DEFAULT_SEGMENT_SIZE;
-    INDEX_TYPE a = __atomic_fetch_add(&this->m_high, 1, __ATOMIC_SEQ_CST);
+    INDEX_TYPE a = atomic_fetch_add(&this->m_high, 1);
     newHigh = a + 1;
     if (newHigh <= DEFAULT_SEGMENT_SIZE - 1)
     {
@@ -182,12 +184,7 @@ bool GEN_TRYREMOVE_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
     INDEX_TYPE highLocal = GEN_HIGH_NAME(SEGMENT)(this);
     while (lowLocal <= highLocal)
     {
-        if (__atomic_compare_exchange_n (&this->m_low,
-						       &lowLocal,
-						       lowLocal + 1,
-						       0,
-						       __ATOMIC_SEQ_CST,
-						       __ATOMIC_SEQ_CST))
+        if (atomic_compare_exchange_strong(&this->m_low, &lowLocal, lowLocal + 1))
         {
             while (this->m_state[lowLocal] == false)
             {
@@ -195,13 +192,6 @@ bool GEN_TRYREMOVE_NAME(SEGMENT, CONCURRENT_QUEUE_TYPE)
             }
 
             *result = this->m_array[lowLocal];
-
-            if (((CONCURRENT_QUEUE*)this->m_source)->m_numSnapshotTakers <= 0)
-            {
-                #ifdef CONCURRENT_QUEUE_ZERO_OUT_RESULT
-                    memset((void*)&this->m_array[lowLocal], 0, sizeof(CONCURRENT_QUEUE_TYPE));
-                #endif
-            }
 
             if (lowLocal + 1 >= DEFAULT_SEGMENT_SIZE)
             {
@@ -308,7 +298,6 @@ CONCURRENT_QUEUE* GEN_NEW_NAME(CONCURRENT_QUEUE)
     CONCURRENT_QUEUE* newVal = (CONCURRENT_QUEUE*)malloc(sizeof(CONCURRENT_QUEUE));
     newVal->m_tail = GEN_SEG_NEW_NAME(SEGMENT)(0, newVal);
     newVal->m_head = newVal->m_tail;
-    newVal->m_numSnapshotTakers = 0;
     return newVal;
     
     #undef MAKE_SEGMENT_NEW_NAME
@@ -494,21 +483,18 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_QUEUE)
     #define MAKE_SEGMENT_TRYPEEK_NAME(x) x ## _trypeek
     #define GEN_SEG_TRYPEEK_NAME(x) MAKE_SEGMENT_TRYPEEK_NAME(x)
     if (this == NULL) return true;
-    __atomic_fetch_add(&this->m_numSnapshotTakers, 1, __ATOMIC_SEQ_CST);
 
     while (!GEN_ISEMPTY_NAME(CONCURRENT_QUEUE)(this))
     {
         SEGMENT* head = this->m_head;
         if (GEN_SEG_TRYPEEK_NAME(SEGMENT)(head, result))
         {
-            __atomic_fetch_sub(&this->m_numSnapshotTakers, 1, __ATOMIC_SEQ_CST);
             return false;
         }
     }
     #ifdef CONCURRENT_QUEUE_ZERO_OUT_RESULT
         memset(result, 0, sizeof(CONCURRENT_QUEUE_TYPE));
     #endif
-    __atomic_fetch_sub(&this->m_numSnapshotTakers, 1, __ATOMIC_SEQ_CST);
     return false;
 
     #undef MAKE_CONCURRENTQUEUE_ISEMPTY_NAME

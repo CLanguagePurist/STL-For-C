@@ -17,6 +17,7 @@
 #define CONCURRENT_STACK_NAME(x) MAKE_CONCURRENT_STACK_NAME(x)
 #define CONCURRENT_STACK CONCURRENT_STACK_NAME(CONCURRENT_STACK_TYPE)
 
+#ifdef STL_FOR_C_IMPLEMENTATION_ONLY
 // Node implementation
 typedef struct {
     CONCURRENT_STACK_TYPE m_value;
@@ -27,7 +28,9 @@ typedef struct {
 typedef struct  {
     _Atomic(NODE*) m_head;
 } CONCURRENT_STACK;
-
+#else
+typedef void* CONCURRENT_STACK;
+#endif
 
 #define MAKE_CONCURRENT_STACK_NEW_NAME(x) x ## _new()
 #define GEN_NEW_NAME(x) MAKE_CONCURRENT_STACK_NEW_NAME(x)

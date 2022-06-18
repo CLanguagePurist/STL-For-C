@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
+
+#ifndef STL_FOR_C_IMPLEMENTATION_ONLY
+    #define STL_FOR_C_IMPLEMENTATION_ONLY
+#endif
 #include "include/concurrent_stack.h"
 
 #define MAKE_NODE_NAME(x) concurrent_stack_node_ ## x
@@ -98,7 +102,7 @@ bool GEN_PUSH_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     NODE* newNode = (NODE*)malloc(sizeof(NODE));
     newNode->m_next = atomic_load(&this->m_head);
     newNode->m_value = item;
-    if (!atomic_compare_exchange_strong(&this->m_head, &newNode->m_next, newNode))
+    if (!atomic_compare_exchange_strong(&this->m_head, (NODE**) &newNode->m_next, newNode))
     {
         free(newNode);
         return true;
@@ -111,20 +115,25 @@ bool GEN_PUSH_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL || length <= 0) return true;
-    NODE* head = (NODE*)calloc(sizeof(NODE), length);
-    NODE* tail = head + length - 1;
-    head->m_value = items[0];
-    for (INDEX_TYPE i = 0; i < length; ++i)
+    NODE* head = (NODE*)calloc(sizeof(NODE), 1);
+    NODE* curr = head;
+    head->m_value = items[length - 1];
+    for (INDEX_TYPE i = length - 2; i > -1; --i)
     {
-        if (&head[i] != tail)
-            (&head[i])->m_next = (&head[i + 1]);
-        (&head[i])->m_value = items[length - i - 1];
+        curr->m_next = calloc(sizeof(NODE), 1);
+        curr = curr->m_next;
+        curr->m_value = items[i];
     }
-    tail->m_next = this->m_head;
+    curr->m_next = this->m_head;
 
-    if (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&tail->m_next, head))
+    if (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&curr->m_next, head))
     {
-        free(head);
+        for (curr = head; curr != NULL;)
+        {
+            NODE* next = curr->m_next;
+            free(curr);
+            curr = next;
+        }
         return true;
     }
     return false;
@@ -165,32 +174,30 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL || count <= 0) return true;
 
-    NODE* poppedHead = atomic_load(&this->m_head);
-    NODE* next = NULL;
-    if (poppedHead == NULL)
+    NODE* head = atomic_load(&this->m_head);
+    NODE* tail = head;
+    INDEX_TYPE actualCount = 0;
+    if (head == NULL)
     {
         return true;
     }
-    if (!atomic_compare_exchange_strong(&this->m_head, &poppedHead, (NODE*)poppedHead->m_next))
+    for (INDEX_TYPE i = 0; tail->m_next != NULL && i < count; ++i)
+    {
+        tail = tail->m_next;
+        ++actualCount;
+    }
+    if (!atomic_compare_exchange_strong(&this->m_head, &head, tail))
     {
         return true;
     }
-    INDEX_TYPE nodesCount = 1;
-    for (; nodesCount < count && next != NULL; ++nodesCount)
+    INDEX_TYPE index = 0;
+    NODE* curr = head;
+    for (; curr != tail; curr = curr->m_next)
     {
-        next = next->m_next;
+        result[index++] = curr->m_value;
     }
-    if (!atomic_compare_exchange_strong(&this->m_head, &poppedHead, next))
-    {
-        return true;
-    }
-    result[0] = poppedHead->m_value;
-    poppedHead = poppedHead->m_next;
-    for (INDEX_TYPE i = 1; i < nodesCount; ++i)
-    {
-        result[i] = poppedHead->m_value;
-        poppedHead = poppedHead->m_next;
-    }
+    result[index] = curr->m_value;
+    *result_length = actualCount;
     return false;
 }
 
