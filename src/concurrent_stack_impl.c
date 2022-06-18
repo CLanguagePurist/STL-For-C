@@ -193,7 +193,6 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
         result[index++] = curr->m_value;
     }
     result[index] = curr->m_value;
-    printf("index: %i, last value: %i\n", index, result[index]);
     *result_length = actualCount;
     return false;
 }
