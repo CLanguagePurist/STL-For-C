@@ -1,16 +1,7 @@
-#ifndef CONCURRENT_STACK_TYPE
-    #error There must be a provided type for CONCURRENT_STACK_TYPE and it must be defined prior to using this code!
-    #define CONCURRENT_STACK_TYPE int32_t
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
 #include "include/concurrent_stack.h"
-
-#ifndef BACKOFF_MAX_YIELDS
-    #define BACKOFF_MAX_YIELDS 8
-#endif
 
 #define MAKE_NODE_NAME(x) concurrent_stack_node_ ## x
 #define NODE_NAME(x) MAKE_NODE_NAME(x)
@@ -19,18 +10,6 @@
 #define MAKE_CONCURRENT_STACK_NAME(x) concurrent_stack_ ## x
 #define CONCURRENT_STACK_NAME(x) MAKE_CONCURRENT_STACK_NAME(x)
 #define CONCURRENT_STACK CONCURRENT_STACK_NAME(CONCURRENT_STACK_TYPE)
-
-// Node implementation
-typedef struct {
-    CONCURRENT_STACK_TYPE m_value;
-    NODE* m_next;
-} NODE;
-
-// Concurrent Stack Implementation
-typedef struct  {
-    NODE* m_head;
-} CONCURRENT_STACK;
-
 
 #define MAKE_CONCURRENT_STACK_NEW_NAME(x) x ## _new()
 #define GEN_NEW_NAME(x) MAKE_CONCURRENT_STACK_NEW_NAME(x)
@@ -55,6 +34,20 @@ CONCURRENT_STACK* GEN_NEW_NAME2(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 
     stack->m_head = lastNode;
     return stack;
+}
+
+#define MAKE_CONCURRENT_STACK_DESTROY_NAME(x) x ## _destroy(x* this)
+#define GEN_DESTROY_NAME(x) MAKE_CONCURRENT_STACK_DESTROY_NAME(x)
+bool GEN_DESTROY_NAME(CONCURRENT_STACK)
+{
+    for (NODE* ptr = this->m_head; ptr != NULL;)
+    {
+        NODE* next = (NODE*)ptr->m_next;
+        free(ptr);
+        ptr = next;
+    }
+    free(this);
+    return false;
 }
 
 #define MAKE_CONCURRENT_STACK_ISEMPTY_NAME(x) x ## _isempty(x* this)
@@ -85,12 +78,14 @@ bool GEN_CLEAR_NAME(CONCURRENT_STACK)
     if (this == NULL) return true;
     void* nullPtr = NULL;
     NODE* original = NULL;
-    __atomic_exchange(&this->m_head, (volatile void**)&nullPtr, &original, __ATOMIC_SEQ_CST);
+    original = atomic_exchange(&this->m_head, nullPtr);
     if (original == NULL)
         return false;
-    for (NODE* current = original; current != NULL; current = current->m_next)
+    for (NODE* current = original; current != NULL;)
     {
+        NODE* next = current->m_next;
         free(current);
+        current = next;
     }
     return false;
 }
@@ -101,9 +96,12 @@ bool GEN_PUSH_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
     NODE* newNode = (NODE*)malloc(sizeof(NODE));
-    if (!__atomic_compare_exchange_n(&this->m_head, &newNode->m_next, newNode, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    newNode->m_next = atomic_load(&this->m_head);
+    newNode->m_value = item;
+    if (!atomic_compare_exchange_strong(&this->m_head, &newNode->m_next, newNode))
     {
-        atomic_signal_fence(memory_order_acq_rel);
+        free(newNode);
+        return true;
     }
     return false;
 }
@@ -125,7 +123,7 @@ bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     }
     tail->m_next = this->m_head;
 
-    while (!__atomic_compare_exchange_n(&this->m_head, &tail->m_next, head, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    while (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&tail->m_next, head))
     {
         atomic_signal_fence(memory_order_acq_rel);
     }
@@ -137,9 +135,8 @@ bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 bool GEN_TRYPEEK_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
-    NODE node = {};
-    __atomic_load(this->m_head, &node, __ATOMIC_SEQ_CST);
-    *result = node.m_value;
+    NODE* node = (NODE*) atomic_load(&this->m_head);
+    *result = node->m_value;
     return false;
 }
 
@@ -153,9 +150,9 @@ bool GEN_TRYPOP_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     {
         return true;
     }
-    while (!__atomic_compare_exchange_n(&this->m_head, head, &head->m_next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    if (!atomic_compare_exchange_strong(&this->m_head, &head, (NODE*)head->m_next))
     {
-        atomic_signal_fence(memory_order_acq_rel);
+        return true;
     }
     *result = head->m_value;
     return false;
@@ -168,14 +165,13 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL || count <= 0) return true;
 
-    NODE* poppedHead = NULL;
+    NODE* poppedHead = atomic_load(&this->m_head);
     NODE* next = NULL;
-    __atomic_load(&this->m_head, &poppedHead, __ATOMIC_SEQ_CST);
     if (poppedHead == NULL)
     {
         return true;
     }
-    if (!__atomic_compare_exchange_n(&this->m_head, poppedHead, &poppedHead->m_next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    if (!atomic_compare_exchange_strong(&this->m_head, &poppedHead, (NODE*)poppedHead->m_next))
     {
         return true;
     }
@@ -184,7 +180,7 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
     {
         next = next->m_next;
     }
-    if (!__atomic_compare_exchange_n(&this->m_head, poppedHead, &next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    if (!atomic_compare_exchange_strong(&this->m_head, &poppedHead, next))
     {
         return true;
     }
@@ -214,15 +210,18 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 #undef MAKE_CONCURRENT_STACK_COUNT_NAME
 #undef GEN_ISEMPTY_NAME
 #undef MAKE_CONCURRENT_STACK_ISEMPTY_NAME
+#undef GEN_DESTROY_NAME
+#undef MAKE_CONCURRENT_STACK_DESTROY_NAME
 #undef GEN_NEW_NAME2
 #undef MAKE_CONCURRENT_STACK_NEW_NAME2
 #undef GEN_NEW_NAME
 #undef MAKE_CONCURRENT_STACK_NEW_NAME
 
+#undef MAKE_NODE_NAME
+#undef NODE_NAME
+#undef NODE
 #undef MAKE_CONCURRENT_STACK_NAME
 #undef CONCURRENT_STACK_NAME
 #undef CONCURRENT_STACK
 
-#undef DEFAULT_SEGMENT_SIZE
-#undef INDEX_TYPE
 #undef CONCURRENT_STACK_TYPE
