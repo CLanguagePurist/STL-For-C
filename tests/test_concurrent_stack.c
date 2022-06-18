@@ -31,7 +31,7 @@ int Test_Push_And_Pop()
         if (result != i) return 3;
     }
 
-    concurrent_queue_int32_t_delete(stack);
+    concurrent_stack_int32_t_destroy(stack);
     return 0;
 }
 

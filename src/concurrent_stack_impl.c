@@ -1,8 +1,3 @@
-#ifndef CONCURRENT_STACK_TYPE
-    #error There must be a provided type for CONCURRENT_STACK_TYPE and it must be defined prior to using this code!
-    #define CONCURRENT_STACK_TYPE int32_t
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
@@ -39,6 +34,20 @@ CONCURRENT_STACK* GEN_NEW_NAME2(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 
     stack->m_head = lastNode;
     return stack;
+}
+
+#define MAKE_CONCURRENT_STACK_DESTROY_NAME(x) x ## _destroy(x* this)
+#define GEN_DESTROY_NAME(x) MAKE_CONCURRENT_STACK_DESTROY_NAME(x)
+bool GEN_DESTROY_NAME(CONCURRENT_STACK)
+{
+    for (NODE* ptr = this->m_head; ptr != NULL;)
+    {
+        NODE* next = (NODE*)ptr->m_next;
+        free(ptr);
+        ptr = next;
+    }
+    free(this);
+    return false;
 }
 
 #define MAKE_CONCURRENT_STACK_ISEMPTY_NAME(x) x ## _isempty(x* this)
@@ -121,9 +130,8 @@ bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 bool GEN_TRYPEEK_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
-    NODE node = {};
-    __atomic_load(this->m_head, &node, __ATOMIC_SEQ_CST);
-    *result = node.m_value;
+    NODE* node = (NODE*) atomic_load(&this->m_head);
+    *result = node->m_value;
     return false;
 }
 
@@ -198,15 +206,18 @@ bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 #undef MAKE_CONCURRENT_STACK_COUNT_NAME
 #undef GEN_ISEMPTY_NAME
 #undef MAKE_CONCURRENT_STACK_ISEMPTY_NAME
+#undef GEN_DESTROY_NAME
+#undef MAKE_CONCURRENT_STACK_DESTROY_NAME
 #undef GEN_NEW_NAME2
 #undef MAKE_CONCURRENT_STACK_NEW_NAME2
 #undef GEN_NEW_NAME
 #undef MAKE_CONCURRENT_STACK_NEW_NAME
 
+#undef MAKE_NODE_NAME
+#undef NODE_NAME
+#undef NODE
 #undef MAKE_CONCURRENT_STACK_NAME
 #undef CONCURRENT_STACK_NAME
 #undef CONCURRENT_STACK
 
-#undef DEFAULT_SEGMENT_SIZE
-#undef INDEX_TYPE
 #undef CONCURRENT_STACK_TYPE
