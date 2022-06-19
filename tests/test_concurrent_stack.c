@@ -113,23 +113,11 @@ int Test_Multithread_Push()
         }
         validator[res] = 1;
     }
-    for (int32_t y = 0; y < 2896; ++y)
-    {
-        for (int32_t x = 0; x < 2896; ++x)
-        {
-            if (validator[y * 2896 + x] == 1)
-                printf("x ");
-            else
-                printf(". ");
-        }
-        printf("\n");
-    }
 
     for (int32_t i = 8388607; i > -1; --i)
     {
         if (validator[i] == 0)
         {
-            printf("%i\n", i);
             return 3;
         }
     }
