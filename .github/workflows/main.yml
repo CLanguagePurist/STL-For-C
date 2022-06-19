@@ -52,4 +52,4 @@ jobs:
         run: .github/workflows/bin/Release/net6.0/linux-x64/publish/workflows
       - name: Pass or Fail Tests
         run: |
-          if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
+          if [[ ${{ env.status }} == 'PASS' ]]; then exit 0; else exit 1; fi

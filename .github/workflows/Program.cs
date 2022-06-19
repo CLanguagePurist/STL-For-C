@@ -41,7 +41,9 @@ namespace Workflows{
                         PASS = false;
                 }
             }
-            Console.WriteLine(PASS ? "::set-output name=status::'PASS'" : "::set-output name=status::'FAIL'");
+            var githubEnvFile = Environment.GetEnvironmentVariable("GITHUB_ENV");
+            if (string.IsNullOrWhiteSpace(githubEnvFile)) return 1;
+            await File.AppendAllTextAsync(githubEnvFile, "status='PASS'\n");
 
             return 0;
         }
