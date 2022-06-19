@@ -167,7 +167,6 @@ int Test_Multithread_Pop()
     {
         thrd_yield();
     }
-    printf("Completed the popping\n");
     for (int32_t i = 8388607; i > -1; --i)
     {
         if (popResult[i] == 0)

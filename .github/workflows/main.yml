@@ -47,7 +47,7 @@ jobs:
       - name: Build C# workflows project for parsing log
         run: dotnet build .github/workflows
       - name: Run C# workflows project for parsing log
-        run: dotnet run .github/workflows
+        run: dotnet run --project .github/workflows
       - name: Pass or Fail Tests
         run: |
           if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
