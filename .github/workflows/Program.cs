@@ -18,8 +18,8 @@ namespace Workflows{
                 projectRoot = parent2.FullName;
                 if (string.IsNullOrWhiteSpace(projectRoot)) return 1;
             }
-
-            var logContent = await File.ReadAllLinesAsync(projectRoot);
+            var path = Path.Combine(projectRoot, "build/meson-logs/testlog.txt");
+            var logContent = await File.ReadAllLinesAsync(path);
 
             bool PASS = true;
 

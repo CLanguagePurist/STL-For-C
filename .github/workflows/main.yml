@@ -42,7 +42,7 @@ jobs:
       - name: Setup build directory
         run: meson setup build
       - name: Run a series of tests
-        run: meson test -C build -v
+        run: meson test -C build
         continue-on-error: true
       - name: Build C# workflows project for parsing log
         run: dotnet build .github/workflows
