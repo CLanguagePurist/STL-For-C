@@ -10,7 +10,14 @@ namespace Workflows{
                 return 1;
             if (!projectRoot.Contains("STL-For-C")) return 1;
             if (projectRoot.Contains(".github/workflows"))
-                projectRoot = Directory.GetParent(Directory.GetParent(projectRoot).FullName).FullName;
+            {
+                var parent1 = Directory.GetParent(projectRoot);
+                if (parent1 == null) return 1;
+                var parent2 = Directory.GetParent(parent1.FullName);
+                if (parent2 == null) return 1;
+                projectRoot = parent2.FullName;
+                if (string.IsNullOrWhiteSpace(projectRoot)) return 1;
+            }
 
             var logContent = await File.ReadAllLinesAsync(projectRoot);
 
