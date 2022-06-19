@@ -156,14 +156,13 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 bool GEN_TRYPOP_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
-    NODE* head = this->m_head;
+    NODE* head = (NODE*) atomic_load(&this->m_head);
     if (head == NULL)
-    {
         return true;
-    }
-    if (!atomic_compare_exchange_strong(&this->m_head, &head, (NODE*)head->m_next))
+    while (!atomic_compare_exchange_strong(&this->m_head, &head, (NODE*)head->m_next))
     {
-        return true;
+        atomic_signal_fence(__ATOMIC_ACQ_REL);
+        head = (NODE*) atomic_load(&this->m_head);
     }
     *result = head->m_value;
     return false;
