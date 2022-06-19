@@ -46,8 +46,10 @@ jobs:
         continue-on-error: true
       - name: Build C# workflows project for parsing log
         run: dotnet build .github/workflows
-      - name: Run C# workflows project for parsing log
-        run: sudo dotnet run --project .github/workflows
+      - name: Publish C# binary
+        run: dotnet publish .github/workflows -r linux-x64 -p:PublishSingleFile=true -c Release
+      - name: Run C# binary
+        run: sudo .github/workflows/bin/Release/net6.0/linux-x64/publish/workflows
       - name: Pass or Fail Tests
         run: |
           if [[ ${{ steps.test_verification.outputs.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
