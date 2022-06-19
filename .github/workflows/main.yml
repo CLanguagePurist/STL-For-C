@@ -37,12 +37,11 @@ jobs:
         with:
           version: latest
           platform: x64
-          
       - name: Setup build directory
         run: meson setup build
-
       - name: Run a series of tests
         run: meson test -C build -v
+        continue-on-error: true
       - name: Build C# workflows project for parsing log
         run: dotnet build .github/workflows
       - name: Run C# workflows project for parsing log
