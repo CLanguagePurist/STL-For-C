@@ -43,7 +43,7 @@ namespace Workflows{
             }
             var githubEnvFile = Environment.GetEnvironmentVariable("GITHUB_ENV");
             if (string.IsNullOrWhiteSpace(githubEnvFile)) return 1;
-            await File.AppendAllTextAsync(githubEnvFile, "status='PASS'\n");
+            await File.AppendAllTextAsync(githubEnvFile, "status='" + (PASS ? "PASS" : "FAIL") +"'\n");
 
             return 0;
         }
