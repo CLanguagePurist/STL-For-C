@@ -10,7 +10,7 @@ typedef struct {
 
 #define CONCURRENT_STACK_TYPE TestStruct
 #include "src/concurrent_stack_impl.c"
-
+#include "STL_CThread/source/tinycthread.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -62,6 +62,141 @@ int Test_PushRange_And_PopRange()
     return 0;
 }
 
+
+static concurrent_stack_int32_t *global_stack;
+static volatile int32_t completedCount = 0;
+
+int push_to_global_stack(void *arg)
+{
+    int32_t index = ((int32_t *)arg)[0];
+    int32_t length = ((int32_t *)arg)[1];
+    index *= length;
+    int32_t endIndex = index + length;
+    for (int32_t i = index; i < endIndex; ++i)
+    {
+        concurrent_stack_int32_t_push(global_stack, i);
+    }
+    ++completedCount;
+    return 0;
+}
+
+int Test_Multithread_Push()
+{
+    global_stack = concurrent_stack_int32_t_new();
+    thrd_t *threads = (thrd_t *)malloc(sizeof(thrd_t) * 8);
+    int32_t args[16];
+    // Dispatch 8 Threads
+    for (int32_t threadIndex = 0; threadIndex < 8; ++threadIndex)
+    {
+        args[threadIndex * 2] = threadIndex;
+        args[threadIndex * 2 + 1] = 1048576;
+        thrd_create(&threads[threadIndex], push_to_global_stack, &args[threadIndex * 2]);
+    }
+
+    while (completedCount != 8)
+    {
+        thrd_yield();
+    }
+
+    if (concurrent_stack_int32_t_count(global_stack) != 8388608)
+    {
+        return 1;
+    }
+
+    int32_t *validator = (int32_t *)calloc(8388608, sizeof(int32_t));
+    while (!concurrent_stack_int32_t_isempty(global_stack))
+    {
+        int32_t res = 0;
+        if (concurrent_stack_int32_t_trypop(global_stack, &res))
+        {
+            return 2;
+        }
+        validator[res] = 1;
+    }
+    for (int32_t y = 0; y < 2896; ++y)
+    {
+        for (int32_t x = 0; x < 2896; ++x)
+        {
+            if (validator[y * 2896 + x] == 1)
+                printf("x ");
+            else
+                printf(". ");
+        }
+        printf("\n");
+    }
+
+    for (int32_t i = 8388607; i > -1; --i)
+    {
+        if (validator[i] == 0)
+        {
+            printf("%i\n", i);
+            return 3;
+        }
+    }
+    for (int threadId = 0; threadId < 8; ++threadId)
+    {
+        thrd_detach(threads[threadId]);
+    }
+    free(validator);
+    completedCount = 0;
+    free(threads);
+    return 0;
+}
+
+static int* popResult;
+
+int pop_from_global_stack(void *arg)
+{
+    int32_t length = ((int32_t *)arg)[0];
+    for (int32_t i = 0; i < length; ++i)
+    {
+        int32_t res = 0;
+        if (concurrent_stack_int32_t_trypop(global_stack, &res))
+            return 1;
+        popResult[res] = 1;
+    }
+    ++completedCount;
+    return 0;
+}
+
+int Test_Multithread_Pop()
+{
+    global_stack = concurrent_stack_int32_t_new();
+    thrd_t *threads = (thrd_t *)malloc(sizeof(thrd_t) * 8);
+    popResult = (int32_t *)calloc(8388608, sizeof(int32_t));
+    for (int32_t i = 0; i < 8388608; ++i)
+    {
+        if (concurrent_stack_int32_t_push(global_stack, i)) return 1;
+    }
+    int32_t args = 1048576;
+    // Dispatch 8 Threads
+    for (int32_t threadIndex = 0; threadIndex < 8; ++threadIndex)
+    {
+        thrd_create(&threads[threadIndex], pop_from_global_stack, &args);
+    }
+
+    while (completedCount != 8)
+    {
+        thrd_yield();
+    }
+
+    for (int32_t i = 8388607; i > -1; --i)
+    {
+        if (popResult[i] == 0)
+        {
+            return 2;
+        }
+    }
+    for (int threadId = 0; threadId < 8; ++threadId)
+    {
+        thrd_detach(threads[threadId]);
+    }
+    free(popResult);
+    completedCount = 0;
+    free(threads);
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc > 0)
@@ -75,6 +210,14 @@ int main(int argc, char* argv[])
             if (strcmp(argv[i], "test_pushrange_and_poprange") == 0)
             {
                 return Test_PushRange_And_PopRange();
+            }
+            if (strcmp(argv[i], "test_multithread_push") == 0)
+            {
+                return Test_Multithread_Push();
+            }
+            if (strcmp(argv[i], "test_multithread_pop") == 0)
+            {
+                return Test_Multithread_Pop();
             }
         }
     }

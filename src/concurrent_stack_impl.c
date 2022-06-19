@@ -99,14 +99,16 @@ bool GEN_CLEAR_NAME(CONCURRENT_STACK)
 bool GEN_PUSH_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
+    char retry = 0;
     NODE* newNode = (NODE*)malloc(sizeof(NODE));
-    newNode->m_next = atomic_load(&this->m_head);
     newNode->m_value = item;
-    if (!atomic_compare_exchange_strong(&this->m_head, (NODE**) &newNode->m_next, newNode))
-    {
-        free(newNode);
-        return true;
+    do {
+        if (retry > 0)
+            atomic_signal_fence(__ATOMIC_ACQ_REL);
+        newNode->m_next = atomic_load(&this->m_head);
+        ++retry;
     }
+    while (!atomic_compare_exchange_strong(&this->m_head, (NODE**) &newNode->m_next, newNode));
     return false;
 }
 

@@ -311,9 +311,10 @@ bool GEN_LIST_REMOVE_ITEM_NAME(LIST)
 bool GEN_LIST_CLEAR_NAME(LIST)
 {
     if (this == NULL) return true;
-    free(this->items);
-    this->items = NULL;
-    this->capacity = 0;
+    if (this->items != NULL)
+        free(this->items);
+    this->items = calloc(sizeof(LIST_TYPE), 32);
+    this->capacity = 32;
     this->size = 0;
     return false;
 }

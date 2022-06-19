@@ -101,7 +101,7 @@ int Test_Multithread_Enqueue()
         thrd_yield();
     }
 
-    int32_t *validator = (int32_t *)calloc(1048576 * 8, sizeof(int32_t));
+    int32_t *validator = (int32_t *)calloc(8388608, sizeof(int32_t));
     while (!concurrent_queue_int32_t_isempty(global_queue))
     {
         int32_t res = 0;
@@ -112,7 +112,7 @@ int Test_Multithread_Enqueue()
         validator[res] = 1;
     }
 
-    for (int32_t i = 0; i < 1048576 * 8; ++i)
+    for (int32_t i = 0; i < 8388608; ++i)
     {
         if (validator[i] == 0)
         {
@@ -149,8 +149,8 @@ int Test_Multithread_Dequeue()
 {
     global_queue = concurrent_queue_int32_t_new();
     thrd_t *threads = (thrd_t *)malloc(sizeof(thrd_t) * 8);
-    dequeueResult = (int32_t *)calloc(1048576 * 8, sizeof(int32_t));
-    for (int32_t i = 0; i < 1048576 * 8; ++i)
+    dequeueResult = (int32_t *)calloc(8388608, sizeof(int32_t));
+    for (int32_t i = 0; i < 8388608; ++i)
     {
         if (concurrent_queue_int32_t_enqueue(global_queue, i)) return 1;
     }
@@ -166,7 +166,7 @@ int Test_Multithread_Dequeue()
         thrd_yield();
     }
 
-    for (int32_t i = 0; i < 1048576 * 8; ++i)
+    for (int32_t i = 0; i < 8388608; ++i)
     {
         if (dequeueResult[i] == 0)
         {
