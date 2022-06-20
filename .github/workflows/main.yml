@@ -125,5 +125,5 @@ jobs:
       - name: Run C# binary
         run: .github/workflows/bin/Release/net6.0/win-x64/publish/workflows
       - name: Pass or Fail Tests
-        run: |
-          if [[ ${{ env.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
+        if: ${{ env.status }} == 'FAIL'
+        run: exit 1
