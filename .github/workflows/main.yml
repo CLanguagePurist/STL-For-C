@@ -78,7 +78,7 @@ jobs:
       - name: Build C# workflows project for parsing log
         run: dotnet build .github/workflows
       - name: Publish C# binary
-        run: dotnet publish .github/workflows -r linux-x64 -p:PublishSingleFile=true --self-contained -c Release
+        run: dotnet publish .github/workflows -r osx-x64 -p:PublishSingleFile=true --self-contained -c Release
       - name: Run C# binary
         run: .github/workflows/bin/Release/net6.0/linux-x64/publish/workflows
       - name: Pass or Fail Tests
@@ -115,7 +115,7 @@ jobs:
       - name: Build C# workflows project for parsing log
         run: dotnet build .github/workflows
       - name: Publish C# binary
-        run: dotnet publish .github/workflows -r linux-x64 -p:PublishSingleFile=true --self-contained -c Release
+        run: dotnet publish .github/workflows -r win-x64 -p:PublishSingleFile=true --self-contained -c Release
       - name: Run C# binary
         run: .github/workflows/bin/Release/net6.0/linux-x64/publish/workflows
       - name: Pass or Fail Tests
