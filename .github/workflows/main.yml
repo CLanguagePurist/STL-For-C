@@ -28,6 +28,8 @@ jobs:
         with:
           submodules: recursive
       - uses: actions/setup-dotnet@v2
+        with:
+            dotnet-version: '6.x'
       - uses: actions/setup-python@v1
         with:
           python-version: '3.x'
@@ -65,6 +67,8 @@ jobs:
         with:
           submodules: recursive
       - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.x'
       - uses: actions/setup-python@v1
         with:
           python-version: '3.x'
@@ -96,6 +100,8 @@ jobs:
         with:
           submodules: recursive
       - uses: actions/setup-dotnet@v2
+        with:
+            dotnet-version: '6.x'
       - uses: actions/setup-python@v1
         with:
           python-version: '3.x'
