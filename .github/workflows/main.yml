@@ -53,3 +53,71 @@ jobs:
       - name: Pass or Fail Tests
         run: |
           if [[ ${{ env.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
+
+  macosx:
+    # The type of runner that the job will run on
+    runs-on: macos-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.x'
+      - name: Install Meson and Ninja-build
+        run: pip install meson ninja
+      - name: Setup build directory
+        run: meson setup build
+      - name: Run a series of tests
+        run: meson test -C build
+        continue-on-error: true
+      - name: Build C# workflows project for parsing log
+        run: dotnet build .github/workflows
+      - name: Publish C# binary
+        run: dotnet publish .github/workflows -r linux-x64 -p:PublishSingleFile=true --self-contained -c Release
+      - name: Run C# binary
+        run: .github/workflows/bin/Release/net6.0/linux-x64/publish/workflows
+      - name: Pass or Fail Tests
+        run: |
+          if [[ ${{ env.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
+
+  windows:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.x'
+      - name: Install Meson and Ninja-build
+        run: pip install meson ninja
+      
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: latest
+          platform: x64
+      - name: Setup build directory
+        run: meson setup build
+      - name: Run a series of tests
+        run: meson test -C build
+        continue-on-error: true
+      - name: Build C# workflows project for parsing log
+        run: dotnet build .github/workflows
+      - name: Publish C# binary
+        run: dotnet publish .github/workflows -r linux-x64 -p:PublishSingleFile=true --self-contained -c Release
+      - name: Run C# binary
+        run: .github/workflows/bin/Release/net6.0/linux-x64/publish/workflows
+      - name: Pass or Fail Tests
+        run: |
+          if [[ ${{ env.status }} == 'PASS' ]]; then exit 0; else exit 1; fi
