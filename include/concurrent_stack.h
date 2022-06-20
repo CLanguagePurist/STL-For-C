@@ -27,6 +27,7 @@ typedef struct {
 // Concurrent Stack Implementation
 typedef struct  {
     _Atomic(NODE*) m_head;
+    _Atomic(int32_t) popSemaphore;
 } CONCURRENT_STACK;
 #else
 typedef void* CONCURRENT_STACK;

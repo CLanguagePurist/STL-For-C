@@ -126,18 +126,10 @@ bool GEN_PUSHRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
         curr = curr->m_next;
         curr->m_value = items[i];
     }
-    curr->m_next = this->m_head;
-
-    if (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&curr->m_next, head))
-    {
-        for (curr = head; curr != NULL;)
-        {
-            NODE* next = curr->m_next;
-            free(curr);
-            curr = next;
-        }
-        return true;
+    do {
+        curr->m_next = this->m_head;
     }
+    while (!atomic_compare_exchange_strong(&this->m_head, (NODE**)&curr->m_next, head));
     return false;
 }
 
@@ -156,49 +148,73 @@ bool GEN_TRYPEEK_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 bool GEN_TRYPOP_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL) return true;
-    NODE* head = (NODE*) atomic_load(&this->m_head);
-    if (head == NULL)
-        return true;
-    while (!atomic_compare_exchange_strong(&this->m_head, &head, (NODE*)head->m_next))
+    NODE* head = NULL;
+    int32_t semaphoreExpected = 0;
+    while (!atomic_compare_exchange_strong(&this->popSemaphore, &semaphoreExpected, 1))
+    {
+        atomic_signal_fence(__ATOMIC_ACQ_REL);
+        semaphoreExpected = 0;
+    }
+    do
     {
         atomic_signal_fence(__ATOMIC_ACQ_REL);
         head = (NODE*) atomic_load(&this->m_head);
-    }
+        if (head == NULL)
+            return true;
+    } while (!atomic_compare_exchange_strong(&this->m_head, &head, (NODE*)head->m_next));
     *result = head->m_value;
+    free(head);
+    atomic_store(&this->popSemaphore, 0);
     return false;
 }
-
 
 #define MAKE_CONCURRENT_STACK_TRYPOPRANGE_NAME(x, y) x ## _trypoprange(x* this, y* result, INDEX_TYPE* result_length, INDEX_TYPE count)
 #define GEN_TRYPOPRANGE_NAME(x, y) MAKE_CONCURRENT_STACK_TRYPOPRANGE_NAME(x, y)
 bool GEN_TRYPOPRANGE_NAME(CONCURRENT_STACK, CONCURRENT_STACK_TYPE)
 {
     if (this == NULL || count <= 0) return true;
-
+    int32_t semaphoreExpected = 0;
+    while (!atomic_compare_exchange_strong(&this->popSemaphore, &semaphoreExpected, 1))
+    {
+        atomic_signal_fence(__ATOMIC_ACQ_REL);
+        semaphoreExpected = 0;
+    }
     NODE* head = atomic_load(&this->m_head);
-    NODE* tail = head;
-    INDEX_TYPE actualCount = 0;
-    if (head == NULL)
+    NODE* tail = NULL;
+    NODE* oldHead = NULL;
+    do
     {
-        return true;
-    }
-    for (INDEX_TYPE i = 0; tail->m_next != NULL && i < count; ++i)
-    {
-        tail = tail->m_next;
-        ++actualCount;
-    }
-    if (!atomic_compare_exchange_strong(&this->m_head, &head, tail))
-    {
-        return true;
-    }
+        atomic_signal_fence(__ATOMIC_ACQ_REL);
+        if (head == NULL)
+            return true;
+        if (oldHead != head)
+        {
+            tail = head;
+            for (INDEX_TYPE i = 0; tail->m_next != NULL && i < count; ++i)
+            {
+                tail = atomic_load(&tail->m_next);
+                if (tail == NULL)
+                    return true;
+            }
+            oldHead = head;
+        }
+    } while (!atomic_compare_exchange_strong(&this->m_head, &head, tail));
     INDEX_TYPE index = 0;
-    NODE* curr = head;
-    for (; curr != tail; curr = curr->m_next)
+    for (; head != tail;)
     {
-        result[index++] = curr->m_value;
+        result[index++] = head->m_value;
+        NODE* temp = (NODE*) head->m_next;
+        free(head);
+        head = temp;
     }
-    result[index] = curr->m_value;
-    *result_length = actualCount;
+    if (index < count)
+    {
+        result[index++] = tail->m_value;
+        free(tail);
+        atomic_store(&this->m_head, NULL);
+    }
+    atomic_store(&this->popSemaphore, 0);
+    *result_length = index;
     return false;
 }
 

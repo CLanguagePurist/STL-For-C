@@ -8,8 +8,8 @@ typedef struct {
     double c;
 } TestStruct;
 
-#define CONCURRENT_STACK_TYPE TestStruct
-#include "src/concurrent_stack_impl.c"
+//#define CONCURRENT_STACK_TYPE TestStruct
+//#include "src/concurrent_stack_impl.c"
 #include "STL_CThread/source/tinycthread.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -64,7 +64,7 @@ int Test_PushRange_And_PopRange()
 
 
 static concurrent_stack_int32_t *global_stack;
-static volatile int32_t completedCount = 0;
+static _Atomic int32_t completedCount = 0;
 
 int push_to_global_stack(void *arg)
 {
@@ -74,9 +74,18 @@ int push_to_global_stack(void *arg)
     int32_t endIndex = index + length;
     for (int32_t i = index; i < endIndex; ++i)
     {
-        concurrent_stack_int32_t_push(global_stack, i);
+        if (i % 2 == 0)
+        {
+            if (concurrent_stack_int32_t_push(global_stack, i))
+                return 1;
+        }
+        else
+        {
+            if (concurrent_stack_int32_t_pushrange(global_stack, &i, 1))
+                return 1;
+        }
     }
-    ++completedCount;
+    atomic_fetch_add(&completedCount, 1);
     return 0;
 }
 
@@ -131,19 +140,37 @@ int Test_Multithread_Push()
     return 0;
 }
 
-static int* popResult;
+static _Atomic int32_t* popResult;
 
 int pop_from_global_stack(void *arg)
 {
     int32_t length = ((int32_t *)arg)[0];
-    for (int32_t i = 0; i < length; ++i)
+    int32_t i = 0;
+    for (; i < length; ++i)
     {
         int32_t res = 0;
-        if (concurrent_stack_int32_t_trypop(global_stack, &res))
-            return 1;
+        if (i % 2 == 0)
+        {
+            if (concurrent_stack_int32_t_trypop(global_stack, &res))
+            {
+                return 1;
+            }
+        }
+        else
+        {
+            int64_t resCount = 0;
+            if (concurrent_stack_int32_t_trypoprange(global_stack, &res, &resCount, 1))
+            {
+                return 1;
+            }
+            if (resCount != 1)
+            {
+                return 1;
+            }
+        }
         popResult[res] = 1;
     }
-    ++completedCount;
+    atomic_fetch_add(&completedCount, 1);
     return 0;
 }
 
@@ -151,22 +178,25 @@ int Test_Multithread_Pop()
 {
     global_stack = concurrent_stack_int32_t_new();
     thrd_t *threads = (thrd_t *)malloc(sizeof(thrd_t) * 8);
-    popResult = (int32_t *)calloc(8388608, sizeof(int32_t));
+    popResult = (_Atomic(int32_t) *)calloc(8388608, sizeof(int32_t));
     for (int32_t i = 0; i < 8388608; ++i)
     {
         if (concurrent_stack_int32_t_push(global_stack, i)) return 1;
     }
-    int32_t args = 1048576;
+    int32_t* args = (int32_t*)malloc(sizeof(int32_t));
+    *args = 1048576;
     // Dispatch 8 Threads
     for (int32_t threadIndex = 0; threadIndex < 8; ++threadIndex)
     {
-        thrd_create(&threads[threadIndex], pop_from_global_stack, &args);
+        thrd_create(&threads[threadIndex], pop_from_global_stack, args);
     }
 
     while (completedCount != 8)
     {
         thrd_yield();
     }
+    free(args);
+    
     for (int32_t i = 8388607; i > -1; --i)
     {
         if (popResult[i] == 0)
